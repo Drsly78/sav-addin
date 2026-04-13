@@ -312,6 +312,30 @@
 
 
 
+      <!-- CHAT CLAUDE — bouton toggle + fenêtre inline -->
+      <div id="chat-bubble-btn" style="display:none;margin:8px 12px 4px;cursor:pointer" onclick="toggleChat()">
+        <div style="background:#0078d4;color:#fff;border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">C</div>
+            <span style="font-size:12px;font-weight:600">Claude — Assistant SAV</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="bubble-notif" style="display:none;width:8px;height:8px;background:#e74c3c;border-radius:50%"></span>
+            <span id="bubble-icon" style="font-size:14px;opacity:.8">▼</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-window" style="display:none;margin:0 12px 8px;border:1px solid #d0d0d0;border-radius:8px;overflow:hidden">
+        <div class="chat-messages" id="chat-messages" style="max-height:180px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f8f9fa">
+          <div class="msg-ai">Je connais ce dossier. Pose-moi une question, demande-moi de modifier un champ ou de rédiger un message.</div>
+        </div>
+        <div style="display:flex;gap:5px;padding:7px 8px;border-top:1px solid #e8e8e8;background:#fff">
+          <input type="text" id="chat-input" placeholder="Pose une question ou donne une directive…" onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;padding:6px 9px;border:1px solid #d0d0d0;border-radius:18px;font-size:12px;font-family:inherit;outline:none"/>
+          <button onclick="sendChat()" style="width:30px;height:30px;border-radius:50%;background:#0078d4;color:#fff;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">→</button>
+        </div>
+      </div>
+
     </div><!-- /state-result -->
 
     <!-- ERROR -->
@@ -466,6 +490,7 @@ function analyzeEmail(){
 
 function loadOutlookAttachments(attachments, cb){
   var pending = 0;
+  var imageAtts = [];
   attachments.forEach(function(att){
     if(att.isInline) return;
     var name = (att.name||'').toLowerCase();
@@ -475,20 +500,20 @@ function loadOutlookAttachments(attachments, cb){
     pending++;
     Office.context.mailbox.item.getAttachmentContentAsync(att.id, function(res){
       if(res.status===Office.AsyncResultStatus.Succeeded){
-        var content = res.value;
-        var b64  = content.content;
+        var b64  = res.value.content;
         var mime = isImage ? 'image/jpeg' : 'application/pdf';
-        // Classer par nom
-        if(name.match(/ticket|facture|recu|receipt/i)){
-          G.attachments.ticket = {data:b64, mediaType:mime, name:att.name};
-        } else if(name.match(/notice|schema|plan/i)){
-          G.attachments.notice = {data:b64, mediaType:mime, name:att.name};
-        } else if(isImage){
-          G.attachments.photos.push({data:b64, mediaType:mime, name:att.name});
-        }
+        // Classer toutes les images/PDF comme photos pour que l'IA les analyse
+        // L'IA déterminera elle-même ce qui est ticket, notice ou photo
+        imageAtts.push({data:b64, mediaType:mime, name:att.name});
       }
       pending--;
-      if(pending===0) cb();
+      if(pending===0){
+        // Mettre toutes les PJ dans photos pour analyse IA
+        // L'IA classifiera elle-même via analyse_pj
+        G.attachments.photos = imageAtts;
+        G.pjStatus.photo = imageAtts.length > 0;
+        cb();
+      }
     });
   });
   if(pending===0) cb();
@@ -622,9 +647,9 @@ function runAnalysis(){
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
 function renderResult(d){
   setState('result');
-  // Afficher la bulle chat
+  // Afficher le bouton chat
   var bubble = document.getElementById('chat-bubble-btn');
-  if(bubble) bubble.style.display='flex';
+  if(bubble) bubble.style.display='block';
 
   // Badge client
   var badge = document.getElementById('client-badge');
@@ -795,7 +820,12 @@ function fi(label, id, val, editable, type){
   }
   if(type==='enseigne-su'){
     var opts=['SUPER U','HYPER U','U EXPRESS'];
-    return '<div class="field-group'+(miss?' required-field':'')+'"><div class="fl">'+label+(miss?' *':'')+'</div>'+
+    var isDetected = opts.indexOf(v) >= 0;
+    if(isDetected){
+      // Valeur détectée automatiquement — afficher en lecture seule
+      return '<div class="field-group"><div class="fl">'+label+'</div><div class="fv">'+v+'</div></div>';
+    }
+    return '<div class="field-group required-field"><div class="fl">'+label+' *</div>'+
       '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
       '<option value="">-- Choisir --</option>'+
       opts.map(function(o){return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>';}).join('')+
@@ -1000,8 +1030,8 @@ function copyAndShow(texte, btnId){
 function toggleChat(){
   G.chatOpen=!G.chatOpen;
   var win = document.getElementById('chat-window');
-  win.style.display = G.chatOpen ? 'flex' : 'none';
-  document.getElementById('bubble-icon').textContent = G.chatOpen ? '×' : '💬';
+  win.style.display = G.chatOpen ? 'block' : 'none';
+  document.getElementById('bubble-icon').textContent = G.chatOpen ? '▲' : '▼';
   if(G.chatOpen){
     document.getElementById('bubble-notif').style.display='none';
     setTimeout(function(){ document.getElementById('chat-input').focus(); }, 100);
