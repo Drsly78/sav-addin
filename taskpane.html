@@ -179,6 +179,12 @@
       <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">
         Analyser ce mail
       </button>
+      <div style="margin-top:20px;border-top:1px solid #e0e0e0;padding-top:16px">
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:left">Mode test — coller un mail</div>
+        <textarea id="test-mail-input" placeholder="Colle ici le texte d'un mail SAV pour tester sans Outlook…" style="width:100%;height:120px;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;resize:vertical;color:#333;background:#fff"></textarea>
+        <input id="test-subject-input" placeholder="Objet du mail (optionnel)" style="width:100%;margin-top:5px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:'Segoe UI',Arial,sans-serif"/>
+        <button class="btn btn-secondary" style="margin-top:6px" onclick="analyzeTest()">Analyser ce texte</button>
+      </div>
     </div>
 
     <!-- LOADING -->
@@ -336,7 +342,24 @@ function analyzeEmail(){
     G.mailSubject = Office.context.mailbox.item.subject || '';
     G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress : '';
     G.mailBody    = result.value || '';
+    runAnalysis();
+  });
+}
 
+// ── MODE TEST (navigateur sans Outlook) ─────────────────
+function analyzeTest(){
+  var body    = document.getElementById('test-mail-input').value.trim();
+  var subject = document.getElementById('test-subject-input').value.trim();
+  if(!body){ alert('Colle le texte d\'un mail dans la zone de test.'); return; }
+  G.mailBody    = body;
+  G.mailSubject = subject || '(objet non précisé)';
+  G.mailSender  = 'test@simulation.fr';
+  setState('loading');
+  runAnalysis();
+}
+
+// ── ANALYSE COMMUNE ──────────────────────────────────────
+function runAnalysis(){
     var prompt =
       "Tu es un assistant SAV. Analyse cet email et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
       "Email :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
@@ -371,7 +394,6 @@ function analyzeEmail(){
         renderResult(d);
       }catch(e){ showError("Erreur de décodage IA. Réessaye."); }
     });
-  });
 }
 
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
