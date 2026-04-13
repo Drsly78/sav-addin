@@ -706,29 +706,29 @@ function sendChat(){
 }
 
 // ── API CLAUDE ───────────────────────────────────────────
-// En mode navigateur (test), on passe par un proxy CORS.
-// En mode Outlook (production), appel direct sans proxy.
 function isOutlook(){
   try{ return !!(window.Office && Office.context && Office.context.mailbox); }
   catch(e){ return false; }
 }
 function apiUrl(){
-  return isOutlook()
-    ? 'https://api.anthropic.com/v1/messages'
-    : 'https://corsproxy.io/?https://api.anthropic.com/v1/messages';
+  return 'https://api.anthropic.com/v1/messages';
 }
 
 function callClaude(prompt, cb){
   var key = localStorage.getItem('sav_api_key');
   if(!key){ showError("Clé API manquante."); return; }
+  var controller = new AbortController();
+  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 20000);
   fetch(apiUrl(),{
     method:'POST',
+    signal: controller.signal,
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();}).then(function(data){
+    clearTimeout(timeout);
     if(data.error){showError("Erreur API : "+data.error.message);return;}
     cb(data.content.map(function(b){return b.text||'';}).join(''));
-  }).catch(function(e){ showError("Impossible de contacter l'API : "+e.message); });
+  }).catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
 }
 function callClaudeChat(sys, history, cb){
   var key = localStorage.getItem('sav_api_key');
