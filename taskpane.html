@@ -706,22 +706,34 @@ function sendChat(){
 }
 
 // ── API CLAUDE ───────────────────────────────────────────
+// En mode navigateur (test), on passe par un proxy CORS.
+// En mode Outlook (production), appel direct sans proxy.
+function isOutlook(){
+  try{ return !!(window.Office && Office.context && Office.context.mailbox); }
+  catch(e){ return false; }
+}
+function apiUrl(){
+  return isOutlook()
+    ? 'https://api.anthropic.com/v1/messages'
+    : 'https://corsproxy.io/?https://api.anthropic.com/v1/messages';
+}
+
 function callClaude(prompt, cb){
   var key = localStorage.getItem('sav_api_key');
   if(!key){ showError("Clé API manquante."); return; }
-  fetch('https://api.anthropic.com/v1/messages',{
+  fetch(apiUrl(),{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.error){showError("Erreur API : "+data.error.message);return;}
     cb(data.content.map(function(b){return b.text||'';}).join(''));
-  }).catch(function(){ showError("Impossible de contacter l'API. Vérifie ta connexion."); });
+  }).catch(function(e){ showError("Impossible de contacter l'API : "+e.message); });
 }
 function callClaudeChat(sys, history, cb){
   var key = localStorage.getItem('sav_api_key');
   if(!key) return;
-  fetch('https://api.anthropic.com/v1/messages',{
+  fetch(apiUrl(),{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:history})
