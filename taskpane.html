@@ -39,6 +39,8 @@
 
     /* PJ UPLOAD */
     .pj-upload-zone{margin-top:8px}
+    .pj-drop-zone{border:1.5px dashed #d0d0d0;border-radius:6px;padding:12px;text-align:center;cursor:pointer;transition:border-color .15s;background:#fafafa}
+    .pj-drop-zone:hover{border-color:#0078d4;background:#f0f7ff}
     .pj-upload-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
     .pj-upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
     .pj-slot{border:1.5px dashed #d0d0d0;border-radius:6px;padding:8px 4px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
@@ -226,29 +228,12 @@
 
         <div class="pj-upload-zone">
           <div class="pj-upload-label">Pièces jointes test</div>
-          <div class="pj-upload-grid">
-            <div class="pj-slot required" id="slot-ticket">
-              <input type="file" accept="image/*,.pdf" onchange="handleUpload('ticket',this)"/>
-              <div class="pj-slot-icon">🧾</div>
-              <div class="pj-slot-name">Ticket / Facture</div>
-              <div class="pj-slot-sub">OBLIGATOIRE</div>
-              <div class="pj-badge-ok" id="badge-ticket" style="display:none">✓ Chargé</div>
-            </div>
-            <div class="pj-slot" id="slot-notice">
-              <input type="file" accept="image/*,.pdf" onchange="handleUpload('notice',this)"/>
-              <div class="pj-slot-icon">📋</div>
-              <div class="pj-slot-name">Notice annotée</div>
-              <div class="pj-slot-sub">Recommandée</div>
-              <div class="pj-badge-ok" id="badge-notice" style="display:none">✓ Chargé</div>
-            </div>
-            <div class="pj-slot" id="slot-photo">
-              <input type="file" accept="image/*" multiple onchange="handleUpload('photo',this)"/>
-              <div class="pj-slot-icon">📷</div>
-              <div class="pj-slot-name">Photos défaut</div>
-              <div class="pj-slot-sub">Si visible</div>
-              <div class="pj-badge-ok" id="badge-photo" style="display:none">✓ Chargé</div>
-            </div>
+          <div class="pj-drop-zone" onclick="document.getElementById('pj-multi-input').click()">
+            <input type="file" id="pj-multi-input" accept="image/*,.pdf" multiple style="display:none" onchange="handleMultiUpload(this)"/>
+            <div style="font-size:13px;color:#888;margin-bottom:3px">Cliquer pour sélectionner les fichiers</div>
+            <div style="font-size:11px;color:#aaa">Ticket + notice + photos — tout en une fois</div>
           </div>
+          <div id="pj-file-list" style="margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
         </div>
 
         <button class="btn btn-secondary" style="margin-top:8px" onclick="analyzeTest()">Analyser ce texte</button>
@@ -355,9 +340,9 @@
 
   <!-- ACTION BAR -->
   <div class="action-bar" id="action-bar" style="display:none">
-    <button class="btn btn-danger"   id="btn-relance-ticket" style="display:none" onclick="demanderTicket()">Demander le ticket / la facture</button>
-    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Demander les pièces jointes manquantes</button>
-    <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Demander les informations manquantes</button>
+    <button class="btn btn-danger"   id="btn-relance-ticket" style="display:none" onclick="demanderTicket()">Copier demande ticket / facture</button>
+    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Copier demande pièces jointes</button>
+    <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Copier demande informations</button>
     <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
     <div class="sep"></div>
     <button class="btn btn-secondary" onclick="resetToIdle()">Nouveau mail</button>
@@ -413,13 +398,11 @@ function resetToIdle(){
   document.getElementById('chat-body').style.display='none';
   document.getElementById('chat-icon').textContent='▼';
   document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
-  // reset slots
-  ['ticket','notice','photo'].forEach(function(k){
-    var slot = document.getElementById('slot-'+k);
-    if(slot){ slot.classList.remove('has-file'); }
-    var badge = document.getElementById('badge-'+k);
-    if(badge){ badge.style.display='none'; }
-  });
+  // reset upload
+  var pjInput = document.getElementById('pj-multi-input');
+  if(pjInput) pjInput.value='';
+  var pjList = document.getElementById('pj-file-list');
+  if(pjList) pjList.innerHTML='';
 }
 function setState(s){
   ['idle','loading','result','error'].forEach(function(x){
@@ -428,18 +411,34 @@ function setState(s){
 }
 
 // ── GESTION UPLOADS TEST ─────────────────────────────────
-function handleUpload(type, input){
+function handleMultiUpload(input){
   if(!input.files||!input.files.length) return;
-  var slot  = document.getElementById('slot-'+type);
-  var badge = document.getElementById('badge-'+type);
-  if(type==='photo'){
-    G.attachments.photos = [];
-    Array.from(input.files).forEach(function(f){ readFileB64(f, function(b64,mt){ G.attachments.photos.push({data:b64,mediaType:mt,name:f.name}); }); });
-  } else {
-    readFileB64(input.files[0], function(b64,mt){ G.attachments[type]={data:b64,mediaType:mt,name:input.files[0].name}; });
-  }
-  slot.classList.add('has-file');
-  badge.style.display='block';
+  G.attachments = {ticket:null, notice:null, photos:[]};
+  var list = document.getElementById('pj-file-list');
+  list.innerHTML = '';
+  Array.from(input.files).forEach(function(f){
+    readFileB64(f, function(b64, mt){
+      var n = f.name.toLowerCase();
+      var classified;
+      if(n.match(/ticket|facture|recu|receipt|caisse/i)){
+        G.attachments.ticket = {data:b64, mediaType:mt, name:f.name};
+        classified = 'Ticket/Facture';
+      } else if(n.match(/notice|schema|plan|notice/i)){
+        G.attachments.notice = {data:b64, mediaType:mt, name:f.name};
+        classified = 'Notice';
+      } else {
+        G.attachments.photos.push({data:b64, mediaType:mt, name:f.name});
+        classified = 'Photo';
+      }
+      var row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;background:#f0faf3;border:1px solid #a8d5b5;border-radius:5px;';
+      row.innerHTML='<span style="color:#1e7e34;font-weight:600">'+classified+'</span><span style="color:#555">'+f.name+'</span>';
+      list.appendChild(row);
+    });
+  });
+  G.pjStatus.ticket = false;
+  G.pjStatus.notice = false;
+  G.pjStatus.photo  = false;
 }
 function readFileB64(file, cb){
   var reader = new FileReader();
@@ -535,7 +534,7 @@ function runAnalysis(){
     text: "Tu es un assistant SAV expert.\n\n" +
       "Analyse ce mail et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
       "Mail :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
-      (G.pjStatus.photo ? "Des photos sont jointes — décris ce que tu observes dans 'analyse_photos'.\n\n" : "") +
+      (G.pjStatus.photo ? "Des photos sont jointes. ANALYSE-LES AVEC PRECISION : décris exactement chaque élément visible (pièce concernée, type de défaut, localisation précise, état, quantité visible). Sois factuel et technique.\n\n" : "") +
       "JSON attendu :\n{\n" +
       "  \"client\": \"su\" ou \"its\",\n" +
       "  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" (si SU) — ou nom magasin (si ITS),\n" +
@@ -546,7 +545,7 @@ function runAnalysis(){
       "  \"numero_dossier\": \"numéro de dossier du mail (CNB) ou null\",\n" +
       "  \"quantite\": \"quantité, '1' par défaut\",\n" +
       "  \"mois_mail\": \"format MM/YYYY\",\n" +
-      "  \"date_reception\": \"date du mail DD/MM/YYYY\",\n" +
+      "  \"date_reception\": \"date EXACTE du mail DD/MM/YYYY — cherche 'le', 'du', 'envoyé le', 'date:' dans l'en-tête, corps ou signature\",\n" +
       "  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",\n" +
       "  \"questions\": [\"infos manquantes à demander\"],\n" +
       "  \"resume\": \"1 phrase claire résumant le problème et la demande\",\n" +
@@ -788,7 +787,6 @@ function renderFormSAV_SU(d){
     fi('Enseigne',             'f_enseigne',    d.nom_enseigne,      true, 'enseigne-su')+
     fi('Département et ville', 'f_depville',    d.departement_ville, true)+
     fi('N° de dossier',        'f_cnb',         d.numero_dossier,    true)+
-    fi('Livraison',            'f_livraison',   '',                  true, 'transporteur');
 }
 
 function renderFormSAV_ITS(d){
@@ -801,7 +799,6 @@ function renderFormSAV_ITS(d){
     fi('Référence',            'f_ref',         d.ref_produit,       true)+
     fi('Pannes / problème',    'f_pannes',      d.designation_piece, true)+
     fi('Magasin',              'f_enseigne',    d.nom_enseigne,      true)+
-    fi('Livraison',            'f_livraison',   '',                  true, 'transporteur');
 }
 
 function renderFormRemb_SU(d){
@@ -899,31 +896,37 @@ function validerDossier(){
 
 // ── RELANCES ─────────────────────────────────────────────
 function demanderTicket(){
-  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Cependant, le traitement de votre dossier nécessite obligatoirement la transmission du ticket de caisse ou de la facture d'achat.\n\nMerci de nous le faire parvenir dès que possible afin que nous puissions traiter votre demande.\n\nCordialement,\nService SAV";
-  openReply(corps);
+  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV concernant le dossier "+(G.data&&G.data.numero_dossier||'')+".\n\nCependant, le traitement de votre dossier nécessite obligatoirement la transmission du ticket de caisse ou de la facture d'achat.\n\nMerci de nous le faire parvenir dès que possible afin que nous puissions traiter votre demande.\n\nCordialement,\nService SAV";
+  copyAndShow(corps, 'btn-relance-ticket');
 }
 function demanderPJ(){
   var manquantes = [];
   if(!G.pjStatus.notice && !G.pjIgnored.notice) manquantes.push("la notice annotée avec les pièces concernées et les quantités entourées");
   if(!G.pjStatus.photo  && !G.pjIgnored.photo && G.data && G.data.defaut_visible) manquantes.push("des photos du défaut constaté");
-  var corps = "Bonjour,\n\nNous traitons votre dossier de SAV. Pour le compléter, merci de nous transmettre :\n\n"+
+  var corps = "Bonjour,\n\nNous traitons votre dossier de SAV "+(G.data&&G.data.numero_dossier||'')+". Pour le compléter, merci de nous transmettre :\n\n"+
     manquantes.map(function(m){return "— "+m;}).join("\n")+
     "\n\nMerci de votre coopération.\n\nCordialement,\nService SAV";
-  openReply(corps);
+  copyAndShow(corps, 'btn-relance-pj');
 }
 function sendRelance(){
   if(!G.data||!G.data.questions) return;
-  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Afin de traiter votre dossier, nous avons besoin des informations complémentaires suivantes :\n\n"+
+  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV "+(G.data&&G.data.numero_dossier||'')+". Afin de traiter votre dossier, nous avons besoin des informations complémentaires suivantes :\n\n"+
     G.data.questions.map(function(q){return "— "+q;}).join("\n")+
     "\n\nMerci de votre retour.\n\nCordialement,\nService SAV";
-  openReply(corps);
+  copyAndShow(corps, 'btn-relance-info');
 }
-function openReply(corps){
-  try{
-    Office.context.mailbox.item.displayReplyAllForm({htmlBody:corps.replace(/\n/g,'<br>')});
-  } catch(e){
-    alert("Email préparé :\n\n"+corps);
-  }
+function copyAndShow(texte, btnId){
+  navigator.clipboard.writeText(texte).then(function(){
+    var btn = document.getElementById(btnId);
+    var orig = btn.textContent;
+    btn.textContent = '✓ Copié — colle dans ta réponse mail';
+    btn.style.background='#e6f4ea';
+    btn.style.color='#1e7e34';
+    btn.style.borderColor='#a8d5b5';
+    setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 3000);
+  }).catch(function(){
+    prompt("Copie ce message :", texte);
+  });
 }
 
 // ── CHAT ─────────────────────────────────────────────────
