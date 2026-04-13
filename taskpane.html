@@ -597,7 +597,7 @@ function runAnalysis(){
     contentParts.push({type:'image', source:{type:'base64', media_type:item.att.mediaType, data:item.att.data}});
   });
 
-  callClaudeRaw([{role:'user', content:contentParts}], 1500, function(json){
+  callClaudeRaw([{role:'user', content:contentParts}], 2000, function(json){
     try{
       var d = JSON.parse(json.replace(/```json|```/g,'').trim());
       G.data   = d;
@@ -617,7 +617,11 @@ function runAnalysis(){
         {role:'assistant', content:'J\'ai analyse ce dossier. '+d.resume+(d.analyse_photos?' '+d.analyse_photos:'')+' Je suis pret a t\'aider — pose-moi des questions, demande-moi de modifier un champ ou de rediger un message.'}
       ];
       renderResult(d);
-    }catch(e){ showError("Erreur de decodage IA. Reessaye."); }
+    }catch(e){
+      console.error('JSON brut recu:', json);
+      console.error('Erreur parsing:', e.message);
+      showError("Erreur de decodage IA : " + e.message + "\n\nOuvre la console (F12) pour voir le JSON brut.");
+    }
   });
 }
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
