@@ -310,22 +310,7 @@
         <div class="csv-preview" id="csv-preview"></div>
       </div>
 
-      <!-- CHAT CLAUDE -->
-      <div class="chat-section">
-        <div class="chat-header" onclick="toggleChat()">
-          <span>Poser une question à Claude</span>
-          <span id="chat-icon">▼</span>
-        </div>
-        <div id="chat-body" style="display:none">
-          <div class="chat-messages" id="chat-messages">
-            <div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse au magasin, analyser un point précis, ou poser n'importe quelle question.</div>
-          </div>
-          <div class="chat-input-row">
-            <input type="text" id="chat-input" placeholder="Ex : rédige une relance pour ce magasin…" onkeydown="if(event.key==='Enter')sendChat()"/>
-            <button class="chat-send" onclick="sendChat()">→</button>
-          </div>
-        </div>
-      </div>
+
 
     </div><!-- /state-result -->
 
@@ -637,6 +622,9 @@ function runAnalysis(){
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
 function renderResult(d){
   setState('result');
+  // Afficher la bulle chat
+  var bubble = document.getElementById('chat-bubble-btn');
+  if(bubble) bubble.style.display='flex';
 
   // Badge client
   var badge = document.getElementById('client-badge');
@@ -1011,8 +999,13 @@ function copyAndShow(texte, btnId){
 // ── CHAT ─────────────────────────────────────────────────
 function toggleChat(){
   G.chatOpen=!G.chatOpen;
-  document.getElementById('chat-body').style.display=G.chatOpen?'block':'none';
-  document.getElementById('chat-icon').textContent=G.chatOpen?'▲':'▼';
+  var win = document.getElementById('chat-window');
+  win.style.display = G.chatOpen ? 'flex' : 'none';
+  document.getElementById('bubble-icon').textContent = G.chatOpen ? '×' : '💬';
+  if(G.chatOpen){
+    document.getElementById('bubble-notif').style.display='none';
+    setTimeout(function(){ document.getElementById('chat-input').focus(); }, 100);
+  }
 }
 function sendChat(){
   var input = document.getElementById('chat-input');
