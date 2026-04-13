@@ -643,6 +643,11 @@ function renderResult(d){
   var pt = {complet:'Complet',incomplet:'Incomplet',ambigu:'Ambigu'};
   sp.innerHTML='<span class="statut-pill '+(pm[d.statut]||'pill-warn')+'">'+(pt[d.statut]||d.statut)+'</span>';
 
+  // Mettre à jour pjStatus selon ce que l'IA a vu dans les images
+  if(typeof d.ticket_present !== 'undefined'){
+    G.pjStatus.ticket = d.ticket_present === true;
+  }
+
   // STATUT PIÈCES JOINTES
   renderPJStatus(d);
 
@@ -703,14 +708,14 @@ function renderPJStatus(d){
 
   // Ticket
   if(G.pjStatus.ticket){
-    html += pjItem('ok', 'Ticket / Facture', G.attachments.ticket.name, false, false);
+    html += pjItem('ok', 'Ticket / Facture', G.attachments.ticket ? G.attachments.ticket.name : 'Identifié par IA', false, false);
   } else {
     html += pjItem('error', 'Ticket / Facture manquant', 'Obligatoire — impossible de traiter sans', true, false);
   }
 
   // Notice
   if(G.pjStatus.notice){
-    html += pjItem('ok', 'Notice annotée', G.attachments.notice.name, false, false);
+    html += pjItem('ok', 'Notice annotée', G.attachments.notice ? G.attachments.notice.name : 'Identifiée par IA', false, false);
   } else if(!G.pjIgnored.notice){
     html += pjItem('warn', 'Notice annotée absente', 'Recommandée avec pièces et quantités', false, 'notice');
   } else {
