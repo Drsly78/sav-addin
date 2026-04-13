@@ -6,601 +6,712 @@
   <title>SAV Analyser</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;font-size:13px;background:#f5f5f5;color:#1a1a1a}
 
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      font-size: 13px;
-      background: #f5f5f5;
-      color: #1a1a1a;
-    }
+    /* CONFIG */
+    #screen-config{padding:20px}
+    #screen-config h2{font-size:15px;font-weight:600;margin-bottom:6px}
+    #screen-config p{font-size:12px;color:#666;margin-bottom:12px;line-height:1.5}
+    .cfg-label{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+    #screen-config input{width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-bottom:10px}
+    #screen-config input:focus{outline:none;border-color:#0078d4}
+    .cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .cfg-row input{margin-bottom:0}
 
-    /* ---- ÉCRAN CONFIG ---- */
-    #screen-config {
-      padding: 20px;
-    }
-    #screen-config h2 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    #screen-config p {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 14px;
-      line-height: 1.5;
-    }
-    #screen-config input {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #d0d0d0;
-      border-radius: 6px;
-      font-size: 13px;
-      margin-bottom: 10px;
-      font-family: monospace;
-    }
-    #screen-config input:focus {
-      outline: none;
-      border-color: #0078d4;
-    }
+    /* MAIN */
+    #screen-main{display:none;flex-direction:column;height:100vh}
+    .topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .topbar-title{font-size:13px;font-weight:600}
+    .topbar-btn{font-size:11px;color:#0078d4;background:none;border:none;cursor:pointer;padding:2px 6px}
 
-    /* ---- ÉCRAN PRINCIPAL ---- */
-    #screen-main { display: none; }
+    .scroll-area{flex:1;overflow-y:auto;padding-bottom:16px}
 
-    .topbar {
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .topbar-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1a1a1a;
-    }
-    .topbar-settings {
-      font-size: 11px;
-      color: #0078d4;
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
+    /* IDLE */
+    #state-idle{padding:30px 16px;text-align:center}
+    #state-idle p{font-size:12px;color:#666;line-height:1.6;margin-bottom:16px}
 
-    /* ---- ÉTAT : EN ATTENTE ---- */
-    #state-idle {
-      padding: 40px 20px;
-      text-align: center;
-    }
-    #state-idle .idle-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #e8f0fe;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 12px;
-    }
-    #state-idle p {
-      font-size: 12px;
-      color: #666;
-      line-height: 1.5;
-    }
+    /* LOADING */
+    #state-loading{display:none;padding:50px 16px;text-align:center}
+    .spinner{width:26px;height:26px;border:3px solid #e0e0e0;border-top-color:#0078d4;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #state-loading p{font-size:12px;color:#666}
 
-    /* ---- ÉTAT : CHARGEMENT ---- */
-    #state-loading {
-      display: none;
-      padding: 40px 20px;
-      text-align: center;
-    }
-    .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid #e0e0e0;
-      border-top-color: #0078d4;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 12px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #state-loading p { font-size: 12px; color: #666; }
+    /* RESULT */
+    #state-result{display:none}
 
-    /* ---- ÉTAT : RÉSULTAT ---- */
-    #state-result { display: none; }
+    /* ERROR */
+    #state-error{display:none;padding:20px;text-align:center}
+    #state-error p{font-size:12px;color:#b91c1c;line-height:1.5}
 
-    .status-banner {
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .status-banner.ok { background: #e6f4ea; color: #1e7e34; }
-    .status-banner.warn { background: #fff8e1; color: #b45309; }
-    .status-banner.error { background: #fde8e8; color: #b91c1c; }
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .ok .status-dot { background: #1e7e34; }
-    .warn .status-dot { background: #b45309; }
+    /* CLIENT BADGE */
+    .client-row{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+    .client-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.02em}
+    .badge-u{background:#e8f0fe;color:#1a56db}
+    .badge-its{background:#fce8d5;color:#c2410c}
+    .badge-unknown{background:#f3f4f6;color:#555}
+    .statut-pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px}
+    .pill-ok{background:#e6f4ea;color:#1e7e34}
+    .pill-warn{background:#fff8e1;color:#b45309}
+    .pill-error{background:#fde8e8;color:#b91c1c}
 
-    .fields-section {
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    /* RECAP CARD */
+    .recap-card{margin:10px 12px 0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .recap-header{padding:8px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+    .recap-resume{padding:10px 12px;font-size:13px;color:#1a1a1a;line-height:1.5;border-bottom:1px solid #f0f0f0;font-style:italic;color:#444}
+    .recap-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .recap-item{padding:8px 12px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
+    .recap-item:nth-child(even){border-right:none}
+    .recap-item:nth-last-child(-n+2){border-bottom:none}
+    .recap-item-full{padding:8px 12px;border-bottom:1px solid #f0f0f0;grid-column:1/-1}
+    .recap-item-full:last-child{border-bottom:none}
+    .ri-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .ri-val{font-size:12px;color:#1a1a1a;font-weight:500;line-height:1.4}
+    .ri-val.missing{color:#b45309;font-style:italic;font-weight:400}
+    .ri-val.suggest{color:#1a56db;font-weight:600}
 
-    .field-row {
-      background: #fff;
-      border: 1px solid #e8e8e8;
-      border-radius: 6px;
-      padding: 8px 10px;
-    }
-    .field-label {
-      font-size: 10px;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 2px;
-    }
-    .field-val {
-      font-size: 13px;
-      color: #1a1a1a;
-      font-weight: 500;
-    }
-    .field-val.missing {
-      color: #b45309;
-      font-style: italic;
-      font-weight: 400;
-    }
+    /* QUESTIONS */
+    .questions-block{margin:8px 12px 0;background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:10px 12px}
+    .questions-title{font-size:11px;color:#b45309;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .q-item{font-size:12px;color:#1a1a1a;padding:3px 0;line-height:1.5;display:flex;gap:6px}
+    .q-item:before{content:"–";color:#b45309;flex-shrink:0}
 
-    .questions-block {
-      margin: 0 14px;
-      background: #fff8e1;
-      border: 1px solid #f0c040;
-      border-radius: 6px;
-      padding: 10px 12px;
-    }
-    .questions-label {
-      font-size: 11px;
-      color: #b45309;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 6px;
-    }
-    .question-item {
-      font-size: 12px;
-      color: #1a1a1a;
-      padding: 3px 0;
-      line-height: 1.5;
-      border-bottom: 1px solid #f0e0a0;
-    }
-    .question-item:last-child { border-bottom: none; }
+    /* DECISION */
+    .decision-section{margin:10px 12px 0}
+    .decision-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .decision-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .dbtn{padding:12px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;text-align:center;transition:all .15s;line-height:1.3}
+    .dbtn-sav{background:#e6f4ea;color:#1e7e34;border-color:#a8d5b5}
+    .dbtn-sav:hover,.dbtn-sav.active{background:#1e7e34;color:#fff;border-color:#1e7e34}
+    .dbtn-remb{background:#fff0f0;color:#b91c1c;border-color:#f5b5b5}
+    .dbtn-remb:hover,.dbtn-remb.active{background:#b91c1c;color:#fff;border-color:#b91c1c}
+    .dbtn-sub{font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:.8}
 
-    .csv-block {
-      margin: 8px 14px 0;
-      background: #f0f7ff;
-      border: 1px solid #b3d4f5;
-      border-radius: 6px;
-      padding: 10px 12px;
-    }
-    .csv-label {
-      font-size: 11px;
-      color: #0078d4;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 6px;
-    }
-    .csv-text {
-      font-family: monospace;
-      font-size: 11px;
-      color: #333;
-      background: #fff;
-      border: 1px solid #d0e8f8;
-      border-radius: 4px;
-      padding: 6px 8px;
-      word-break: break-all;
-      white-space: pre-wrap;
-      max-height: 60px;
-      overflow-y: auto;
-      margin-bottom: 6px;
-    }
+    /* FORM */
+    .form-section{margin:10px 12px 0;display:flex;flex-direction:column;gap:5px}
+    .form-title{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:4px 0 2px}
+    .field-group{background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:7px 10px}
+    .field-group.highlight{border-color:#0078d4;background:#f8fbff}
+    .fl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .fv{font-size:12px;color:#1a1a1a;font-weight:500}
+    .fv.missing{color:#b45309;font-style:italic;font-weight:400}
+    .fi{width:100%;border:none;font-size:12px;color:#1a1a1a;font-family:"Segoe UI",Arial,sans-serif;background:transparent;outline:none;padding:0;font-weight:500}
+    .fi::placeholder{color:#bbb;font-style:italic;font-weight:400}
+    .fi.missing{color:#b45309}
+    select.fi{cursor:pointer}
 
-    .action-bar {
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      border-top: 1px solid #e8e8e8;
-      background: #fff;
-      position: sticky;
-      bottom: 0;
-    }
+    /* ACCORD */
+    .accord-block{margin:8px 12px 0;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+    .accord-label{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+    .accord-val{font-size:18px;font-weight:700;color:#0078d4;font-family:monospace;letter-spacing:.06em}
 
-    .btn {
-      width: 100%;
-      padding: 9px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid transparent;
-      text-align: center;
-    }
-    .btn-primary { background: #0078d4; color: #fff; border-color: #0078d4; }
-    .btn-primary:hover { background: #006abd; }
-    .btn-warn { background: #fff8e1; color: #b45309; border-color: #f0c040; }
-    .btn-warn:hover { background: #fff0c0; }
-    .btn-secondary { background: #f5f5f5; color: #555; border-color: #d0d0d0; }
-    .btn-secondary:hover { background: #ebebeb; }
-    .btn-success { background: #e6f4ea; color: #1e7e34; border-color: #a8d5b5; }
-    .btn:disabled { opacity: 0.5; cursor: default; }
+    /* CSV */
+    .csv-block{margin:8px 12px 0;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px}
+    .csv-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .csv-preview{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+    .csv-row{display:flex;gap:6px;font-size:11px;align-items:baseline}
+    .csv-col-name{color:#999;min-width:110px;flex-shrink:0}
+    .csv-col-val{color:#1a1a1a;font-weight:500}
+    .csv-col-val.empty{color:#bbb;font-style:italic}
 
-    .success-msg {
-      font-size: 12px;
-      color: #1e7e34;
-      font-weight: 500;
-      text-align: center;
-      padding: 6px 0;
-    }
+    /* CHAT */
+    .chat-section{margin:10px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .chat-header{background:#f5f5f5;padding:8px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+    .chat-messages{background:#fff;max-height:180px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
+    .msg-ai{background:#f0f7ff;border:1px solid #cce0f5;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.5}
+    .msg-user{background:#e8f0fe;border:1px solid #c0d4f8;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.5;align-self:flex-end;max-width:88%}
+    .chat-loading{color:#999;font-style:italic;font-size:12px;padding:6px 9px}
+    .chat-input-row{display:flex;gap:5px;padding:7px 8px;border-top:1px solid #e8e8e8;background:#fafafa}
+    .chat-input-row input{flex:1;padding:6px 9px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:inherit}
+    .chat-input-row input:focus{outline:none;border-color:#0078d4}
+    .chat-send{padding:6px 11px;background:#0078d4;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500}
 
-    /* ---- ÉTAT : ERREUR ---- */
-    #state-error {
-      display: none;
-      padding: 20px;
-      text-align: center;
-    }
-    #state-error p { font-size: 12px; color: #b91c1c; line-height: 1.5; }
-
-    .section-sep {
-      height: 1px;
-      background: #e8e8e8;
-      margin: 4px 0;
-    }
+    /* ACTION BAR */
+    .action-bar{padding:8px 12px 10px;border-top:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+    .btn{width:100%;padding:9px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;text-align:center}
+    .btn-primary{background:#0078d4;color:#fff;border-color:#0078d4}
+    .btn-success{background:#1e7e34;color:#fff;border-color:#1e7e34}
+    .btn-warn{background:#fff8e1;color:#b45309;border-color:#f0c040}
+    .btn-secondary{background:#f5f5f5;color:#555;border-color:#d0d0d0}
+    .btn:disabled{opacity:.5;cursor:default}
+    .sep{height:1px;background:#e8e8e8;margin:2px 0}
   </style>
 </head>
 <body>
 
-<!-- ========== ÉCRAN CONFIG ========== -->
+<!-- ===== CONFIG ===== -->
 <div id="screen-config">
   <h2>Configuration SAV</h2>
-  <p>Entre ta clé API Claude pour activer l'analyse. Elle sera stockée uniquement sur ce PC, jamais envoyée ailleurs.</p>
+  <p>Entre ta clé API Claude. Elle est stockée uniquement sur ce PC.</p>
+  <div class="cfg-label">Clé API Claude</div>
   <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."/>
+  <p style="font-size:11px;color:#aaa;margin-top:-6px;margin-bottom:12px">Obtenir une clé sur console.anthropic.com</p>
+  <div class="cfg-label">Prochain n° accord du mois</div>
+  <div class="cfg-row">
+    <div>
+      <div class="cfg-label" style="margin-top:4px">Système U</div>
+      <input type="number" id="next-su" placeholder="1" min="1" value="1"/>
+    </div>
+    <div>
+      <div class="cfg-label" style="margin-top:4px">Intersport</div>
+      <input type="number" id="next-its" placeholder="1" min="1" value="1"/>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#aaa;margin-top:-4px;margin-bottom:14px">Remettre à 1 chaque début de mois</p>
   <button class="btn btn-primary" onclick="saveConfig()">Enregistrer et démarrer</button>
-  <p style="margin-top:10px;font-size:11px;color:#999;">Tu peux obtenir une clé sur console.anthropic.com → API Keys</p>
 </div>
 
-<!-- ========== ÉCRAN PRINCIPAL ========== -->
-<div id="screen-main">
-
+<!-- ===== MAIN ===== -->
+<div id="screen-main" style="display:none;flex-direction:column;height:100vh">
   <div class="topbar">
     <span class="topbar-title">SAV Analyser</span>
-    <button class="topbar-settings" onclick="showConfig()">Paramètres</button>
-  </div>
-
-  <!-- Idle -->
-  <div id="state-idle">
-    <div class="idle-icon">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="8" stroke="#0078d4" stroke-width="1.5"/>
-        <path d="M10 6v4l2.5 2.5" stroke="#0078d4" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
+    <div style="display:flex;gap:4px">
+      <button class="topbar-btn" onclick="resetToIdle()">← Nouveau</button>
+      <button class="topbar-btn" onclick="showConfig()">Paramètres</button>
     </div>
-    <p>Clique sur <strong>Analyser ce mail</strong> dans le ruban Outlook pour lancer l'analyse.</p>
-    <br/>
-    <button class="btn btn-primary" onclick="analyzeEmail()" style="max-width:200px;margin:0 auto;">
-      Analyser ce mail
-    </button>
   </div>
 
-  <!-- Chargement -->
-  <div id="state-loading">
-    <div class="spinner"></div>
-    <p>Analyse en cours…</p>
-  </div>
+  <div class="scroll-area">
 
-  <!-- Résultat -->
-  <div id="state-result">
-    <div id="status-banner" class="status-banner"></div>
-
-    <div class="fields-section" id="fields-section"></div>
-
-    <div id="questions-block" class="questions-block" style="display:none">
-      <div class="questions-label">Questions à envoyer au magasin</div>
-      <div id="questions-list"></div>
+    <!-- IDLE -->
+    <div id="state-idle">
+      <p>Ouvre un mail SAV puis clique sur Analyser pour lancer l'analyse IA.</p>
+      <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">
+        Analyser ce mail
+      </button>
     </div>
 
-    <div id="csv-block" class="csv-block" style="display:none">
-      <div class="csv-label">Ligne Excel — copier-coller</div>
-      <div class="csv-text" id="csv-text"></div>
-      <button class="btn btn-secondary" onclick="copyCSV()" id="btn-copy-csv">Copier la ligne</button>
+    <!-- LOADING -->
+    <div id="state-loading">
+      <div class="spinner"></div>
+      <p>Analyse en cours…</p>
     </div>
 
-    <div class="section-sep" style="margin:10px 0 0"></div>
+    <!-- RESULT -->
+    <div id="state-result">
 
-    <div class="action-bar" id="action-bar"></div>
+      <!-- Badge client + statut -->
+      <div class="client-row">
+        <span id="client-badge"></span>
+        <span id="statut-pill"></span>
+      </div>
+
+      <!-- RECAP CARD -->
+      <div class="recap-card" id="recap-card">
+        <div class="recap-header">Récapitulatif du dossier</div>
+        <div class="recap-resume" id="recap-resume"></div>
+        <div class="recap-grid" id="recap-grid"></div>
+      </div>
+
+      <!-- QUESTIONS si incomplet -->
+      <div id="questions-block" class="questions-block" style="display:none">
+        <div class="questions-title">Informations manquantes</div>
+        <div id="questions-list"></div>
+      </div>
+
+      <!-- DECISION -->
+      <div class="decision-section">
+        <div class="decision-label" style="margin-bottom:8px">Décision de traitement</div>
+        <div class="decision-btns">
+          <button class="dbtn dbtn-sav" id="btn-sav" onclick="selectMode('sav')">
+            Envoyer une pièce
+            <span class="dbtn-sub">SAV remplacement</span>
+          </button>
+          <button class="dbtn dbtn-remb" id="btn-remb" onclick="selectMode('remb')">
+            Rembourser
+            <span class="dbtn-sub">Avoir / retour</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FORMULAIRE -->
+      <div class="form-section" id="form-section" style="display:none"></div>
+
+      <!-- NUMÉRO D'ACCORD -->
+      <div id="accord-block" class="accord-block" style="display:none">
+        <div>
+          <div class="accord-label">N° d'accord généré</div>
+          <div style="font-size:11px;color:#888;margin-top:1px">S'incrémente à chaque validation</div>
+        </div>
+        <div class="accord-val" id="accord-val"></div>
+      </div>
+
+      <!-- APERÇU LIGNE EXCEL -->
+      <div id="csv-block" class="csv-block" style="display:none">
+        <div class="csv-label">Aperçu — ligne Excel</div>
+        <div class="csv-preview" id="csv-preview"></div>
+      </div>
+
+      <!-- CHAT CLAUDE -->
+      <div class="chat-section">
+        <div class="chat-header" onclick="toggleChat()">
+          <span>Poser une question à Claude</span>
+          <span id="chat-icon">▼</span>
+        </div>
+        <div id="chat-body" style="display:none">
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg-ai">Je connais le contexte de ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Ex : rédige une relance pour ce magasin…" onkeydown="if(event.key==='Enter')sendChat()"/>
+            <button class="chat-send" onclick="sendChat()">→</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /state-result -->
+
+    <!-- ERROR -->
+    <div id="state-error">
+      <p id="error-msg"></p>
+      <br/>
+      <button class="btn btn-secondary" style="max-width:160px;margin:0 auto;display:block" onclick="resetToIdle()">Réessayer</button>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <!-- ACTION BAR fixe en bas -->
+  <div class="action-bar" id="action-bar" style="display:none">
+    <button class="btn btn-warn" id="btn-relance" style="display:none" onclick="sendRelance()">Préparer email de relance</button>
+    <button class="btn btn-success" id="btn-valider" style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
+    <div class="sep"></div>
+    <button class="btn btn-secondary" onclick="resetToIdle()">Nouveau mail</button>
   </div>
 
-  <!-- Erreur -->
-  <div id="state-error">
-    <p id="error-msg"></p>
-    <br/>
-    <button class="btn btn-secondary" onclick="resetToIdle()">Réessayer</button>
-  </div>
-
-</div>
+</div><!-- /screen-main -->
 
 <script>
-  // ============================================================
-  // INIT OFFICE.JS
-  // ============================================================
-  Office.onReady(function(info) {
-    if (localStorage.getItem('sav_api_key')) {
-      showMain();
-    }
+var G = {
+  data:null, client:null, mode:null,
+  csvLine:null, accordNum:null,
+  chatHistory:[], chatOpen:false,
+  mailBody:'', mailSubject:'', mailSender:''
+};
+
+// ── OFFICE INIT ──────────────────────────────────────────
+Office.onReady(function(){
+  if(localStorage.getItem('sav_api_key')) showMain();
+});
+
+// ── CONFIG ───────────────────────────────────────────────
+function saveConfig(){
+  var key = document.getElementById('api-key-input').value.trim();
+  if(!key.startsWith('sk-ant-')){ alert('Clé invalide — doit commencer par sk-ant-'); return; }
+  localStorage.setItem('sav_api_key', key);
+  localStorage.setItem('next_su',  document.getElementById('next-su').value  || '1');
+  localStorage.setItem('next_its', document.getElementById('next-its').value || '1');
+  showMain();
+}
+function showConfig(){
+  document.getElementById('screen-config').style.display='block';
+  document.getElementById('screen-main').style.display='none';
+  document.getElementById('next-su').value  = localStorage.getItem('next_su')  || '1';
+  document.getElementById('next-its').value = localStorage.getItem('next_its') || '1';
+}
+function showMain(){
+  document.getElementById('screen-config').style.display='none';
+  var m = document.getElementById('screen-main');
+  m.style.display='flex';
+  resetToIdle();
+}
+function resetToIdle(){
+  G={data:null,client:null,mode:null,csvLine:null,accordNum:null,chatHistory:[],chatOpen:false,mailBody:'',mailSubject:'',mailSender:''};
+  setState('idle');
+  document.getElementById('action-bar').style.display='none';
+  document.getElementById('chat-body').style.display='none';
+  document.getElementById('chat-icon').textContent='▼';
+  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais le contexte de ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>';
+}
+function setState(s){
+  ['idle','loading','result','error'].forEach(function(x){
+    document.getElementById('state-'+x).style.display = x===s?'block':'none';
   });
-
-  // ============================================================
-  // CONFIG
-  // ============================================================
-  function saveConfig() {
-    const key = document.getElementById('api-key-input').value.trim();
-    if (!key.startsWith('sk-ant-')) {
-      alert('La clé ne semble pas valide. Elle doit commencer par sk-ant-');
-      return;
-    }
-    localStorage.setItem('sav_api_key', key);
-    showMain();
-  }
-
-  function showConfig() {
-    document.getElementById('screen-config').style.display = 'block';
-    document.getElementById('screen-main').style.display = 'none';
-  }
-
-  function showMain() {
-    document.getElementById('screen-config').style.display = 'none';
-    document.getElementById('screen-main').style.display = 'block';
-    resetToIdle();
-  }
-
-  function resetToIdle() {
-    setState('idle');
-  }
-
-  // ============================================================
-  // GESTION DES ÉTATS
-  // ============================================================
-  function setState(s) {
-    document.getElementById('state-idle').style.display    = s === 'idle'    ? 'block' : 'none';
-    document.getElementById('state-loading').style.display = s === 'loading' ? 'block' : 'none';
-    document.getElementById('state-result').style.display  = s === 'result'  ? 'block' : 'none';
-    document.getElementById('state-error').style.display   = s === 'error'   ? 'block' : 'none';
-  }
-
-  // ============================================================
-  // ANALYSE EMAIL
-  // ============================================================
-  function analyzeEmail() {
-    setState('loading');
-
-    Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result) {
-      if (result.status !== Office.AsyncResultStatus.Succeeded) {
-        showError("Impossible de lire le contenu du mail.");
-        return;
-      }
-
-      const subject = Office.context.mailbox.item.subject || '';
-      const sender  = Office.context.mailbox.item.from
-                      ? Office.context.mailbox.item.from.emailAddress : '';
-      const body    = result.value || '';
-
-      const today = new Date().toLocaleDateString('fr-FR');
-
-      const prompt = `Tu es un assistant SAV. Analyse cet email de demande de SAV et extrais les informations suivantes au format JSON strict.
-
-Email :
-Expéditeur : ${sender}
-Objet : ${subject}
-Corps : ${body}
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, avec exactement ces clés :
-{
-  "canal": "Intersport" ou "Système U" ou "Autre",
-  "magasin": "nom du magasin ou null",
-  "ref_commande": "référence commande ou null",
-  "ref_produit": "référence produit ou null",
-  "piece_demandee": "description précise de la pièce ou null",
-  "date_achat": "date ou null",
-  "email_reponse": "email expéditeur",
-  "statut": "complet" ou "incomplet" ou "ambigu",
-  "resume": "1 phrase résumant la demande",
-  "questions": ["question 1", "question 2"] (tableau vide si dossier complet)
 }
 
-Règles :
-- statut = "complet" si toutes les infos essentielles sont présentes (magasin, pièce, réf produit)
-- statut = "incomplet" si des infos clés manquent
-- statut = "ambigu" si les infos sont présentes mais floues ou contradictoires
-- questions = liste des questions précises à poser au magasin pour compléter le dossier`;
+// ── ANALYSE EMAIL ────────────────────────────────────────
+function analyzeEmail(){
+  setState('loading');
+  Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result){
+    if(result.status !== Office.AsyncResultStatus.Succeeded){ showError("Impossible de lire le mail."); return; }
+    G.mailSubject = Office.context.mailbox.item.subject || '';
+    G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress : '';
+    G.mailBody    = result.value || '';
 
-      callClaude(prompt, function(jsonStr) {
-        try {
-          const data = JSON.parse(jsonStr.replace(/```json|```/g, '').trim());
-          renderResult(data, today, sender);
-        } catch(e) {
-          showError("Erreur lors du décodage de la réponse IA. Réessaye.");
-        }
-      });
+    var prompt =
+      "Tu es un assistant SAV. Analyse cet email et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
+      "Email :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
+      "JSON attendu (toutes les clés obligatoires) :\n" +
+      "{\n" +
+      "  \"client\": \"su\" ou \"its\",\n" +
+      "  \"nom_enseigne\": \"nom complet du magasin\",\n" +
+      "  \"departement_ville\": \"ex: 75 PARIS\",\n" +
+      "  \"ref_produit\": \"référence produit ou null\",\n" +
+      "  \"ean\": \"code EAN 13 chiffres ou null\",\n" +
+      "  \"designation_piece\": \"description précise de la pièce ou du problème\",\n" +
+      "  \"numero_cnb\": \"numéro CNB ou null\",\n" +
+      "  \"quantite\": \"quantité concernée, '1' par défaut\",\n" +
+      "  \"mois_mail\": \"format MM/YYYY\",\n" +
+      "  \"date_reception\": \"date du mail format DD/MM/YYYY\",\n" +
+      "  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",\n" +
+      "  \"questions\": [\"liste des infos manquantes à demander\"],\n" +
+      "  \"resume\": \"1 phrase claire résumant le problème et la demande\",\n" +
+      "  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",\n" +
+      "  \"raison_suggestion\": \"courte explication du pourquoi de la suggestion\"\n" +
+      "}";
+
+    callClaude(prompt, function(json){
+      try{
+        var d = JSON.parse(json.replace(/```json|```/g,'').trim());
+        G.data   = d;
+        G.client = d.client;
+        G.chatHistory = [
+          {role:'user',    content:'Voici le mail SAV à traiter :\n'+G.mailBody},
+          {role:'assistant',content:'J\'ai analysé ce dossier. '+d.resume+' Je suis prêt à t\'aider.'}
+        ];
+        renderResult(d);
+      }catch(e){ showError("Erreur de décodage IA. Réessaye."); }
     });
+  });
+}
+
+// ── AFFICHAGE RÉSULTAT ───────────────────────────────────
+function renderResult(d){
+  setState('result');
+
+  // Badge client
+  var badge = document.getElementById('client-badge');
+  if(d.client==='su')       badge.innerHTML='<span class="client-badge badge-u">Système U</span>';
+  else if(d.client==='its') badge.innerHTML='<span class="client-badge badge-its">Intersport</span>';
+  else                       badge.innerHTML='<span class="client-badge badge-unknown">Client non détecté</span>';
+
+  // Statut pill
+  var sp = document.getElementById('statut-pill');
+  var pillMap = {complet:'pill-ok',incomplet:'pill-warn',ambigu:'pill-warn'};
+  var pillTxt = {complet:'Complet',incomplet:'Incomplet',ambigu:'Ambigu'};
+  sp.innerHTML = '<span class="statut-pill '+(pillMap[d.statut]||'pill-warn')+'">'+(pillTxt[d.statut]||d.statut)+'</span>';
+
+  // Résumé
+  document.getElementById('recap-resume').textContent = d.resume || '';
+
+  // Grille récap
+  var items = [
+    {label:'Magasin',       val:d.nom_enseigne,      full:false},
+    {label:'Département',   val:d.departement_ville, full:false},
+    {label:'Réf. produit',  val:d.ref_produit,       full:false},
+    {label:'EAN',           val:d.ean,               full:false},
+    {label:'Pièce / problème', val:d.designation_piece, full:true},
+    {label:'N° CNB',        val:d.numero_cnb,        full:false},
+    {label:'Quantité',      val:d.quantite,          full:false},
+    {label:'Date réception',val:d.date_reception,    full:false},
+  ];
+
+  // Suggestion traitement
+  var suggTxt = '';
+  if(d.suggestion_traitement==='sav')           suggTxt = 'Envoi pièce — '+d.raison_suggestion;
+  else if(d.suggestion_traitement==='remboursement') suggTxt = 'Remboursement — '+d.raison_suggestion;
+  else                                           suggTxt = 'À déterminer — '+d.raison_suggestion;
+  items.push({label:'Suggestion IA', val:suggTxt, full:true, suggest:true});
+
+  var grid = document.getElementById('recap-grid');
+  grid.innerHTML = items.map(function(item){
+    var cls = item.full ? 'recap-item-full' : 'recap-item';
+    var valCls = !item.val ? 'missing' : (item.suggest ? 'suggest' : '');
+    return '<div class="'+cls+'">'+
+      '<div class="ri-label">'+item.label+'</div>'+
+      '<div class="ri-val '+valCls+'">'+(item.val||'—')+'</div>'+
+      '</div>';
+  }).join('');
+
+  // Questions
+  var qb = document.getElementById('questions-block');
+  if(d.questions && d.questions.length>0){
+    qb.style.display='block';
+    document.getElementById('questions-list').innerHTML = d.questions.map(function(q){
+      return '<div class="q-item">'+q+'</div>';
+    }).join('');
+  } else { qb.style.display='none'; }
+
+  // Pré-sélection suggestion
+  if(d.suggestion_traitement==='sav')           selectMode('sav');
+  else if(d.suggestion_traitement==='remboursement') selectMode('remb');
+
+  // Action bar
+  document.getElementById('action-bar').style.display='flex';
+  document.getElementById('btn-relance').style.display = (d.statut!=='complet') ? 'block':'none';
+  document.getElementById('btn-valider').style.display = 'block';
+}
+
+// ── SÉLECTION MODE ───────────────────────────────────────
+function selectMode(mode){
+  G.mode = mode;
+  document.getElementById('btn-sav').classList.toggle('active',  mode==='sav');
+  document.getElementById('btn-remb').classList.toggle('active', mode==='remb');
+  if(!G.data) return;
+
+  document.getElementById('accord-block').style.display='none';
+  document.getElementById('form-section').style.display='flex';
+
+  var d = G.data;
+  if     (mode==='sav'  && d.client==='su')  renderFormSAV_SU(d);
+  else if(mode==='sav'  && d.client==='its') renderFormSAV_ITS(d);
+  else if(mode==='remb' && d.client==='su')  renderFormRemb_SU(d);
+  else if(mode==='remb' && d.client==='its') renderFormRemb_ITS(d);
+
+  updateCSV();
+}
+
+// ── HELPERS FORMULAIRE ───────────────────────────────────
+function fi(label, id, val, editable, type){
+  var v = val||'';
+  var miss = !v ? ' missing':'';
+  if(!editable){
+    return '<div class="field-group"><div class="fl">'+label+'</div><div class="fv'+(miss)+'">'+(v||'—')+'</div></div>';
+  }
+  if(type==='transporteur'){
+    return '<div class="field-group highlight"><div class="fl">'+label+' *</div>'+
+      '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
+      '<option value="">— Choisir —</option>'+
+      '<option value="DPD"'+(v==='DPD'?' selected':'')+'>DPD</option>'+
+      '<option value="SCH"'+(v==='SCH'?' selected':'')+'>Schenker</option>'+
+      '</select></div>';
+  }
+  if(type==='etat'){
+    var opts=['AVOIR','ECHANGE','REMPLACEMENT ACCESSOIRE','RETOUR EN L\'ETAT','REPARE'];
+    return '<div class="field-group"><div class="fl">'+label+'</div>'+
+      '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
+      opts.map(function(o){ return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>'; }).join('')+
+      '</select></div>';
+  }
+  return '<div class="field-group'+(miss?' highlight':'')+'" ><div class="fl">'+label+(miss?' *':'')+' </div>'+
+    '<input class="fi'+(miss?' missing':'')+'" id="'+id+'" value="'+v+'" placeholder="'+(miss?'À remplir':'')+'" oninput="updateCSV()"/></div>';
+}
+
+// ── FORMULAIRES ──────────────────────────────────────────
+// Colonnes vérifiées sur le fichier Excel réel
+
+function renderFormSAV_SU(d){
+  // Ordre : Date réception | Date expédition | Référence produit | Désignation pièces |
+  //         Nom enseigne | Département et ville | Tracking | Numéro CNB | Livraison (ajoutée)
+  document.getElementById('form-section').innerHTML =
+    '<div class="form-title">Système U — SAV · Champs à compléter</div>'+
+    fi('Date de réception',   'f_date_recep',  d.date_reception,    false)+
+    fi('Référence produit',   'f_ref',         d.ref_produit,       true)+
+    fi('Désignation pièce(s)','f_designation', d.designation_piece, true)+
+    fi('Nom de l\'enseigne',  'f_enseigne',    d.nom_enseigne,      true)+
+    fi('Département et ville','f_depville',    d.departement_ville, true)+
+    fi('Numéro CNB',          'f_cnb',         d.numero_cnb,        true)+
+    fi('Date d\'expédition',  'f_date_expe',   '',                  true)+
+    fi('Tracking',            'f_tracking',    '',                  true)+
+    fi('Livraison',           'f_livraison',   '',                  true, 'transporteur');
+}
+
+function renderFormSAV_ITS(d){
+  // Ordre : Date | Référence | Numéro de lot | Pannes | Magasin | Commentaires |
+  //         Date réception produit | Date expédition | État produit | Tracking | Livraison (ajoutée)
+  document.getElementById('form-section').innerHTML =
+    '<div class="form-title">Intersport — SAV · Champs à compléter</div>'+
+    fi('Date',                     'f_date_recep',      d.date_reception,    false)+
+    fi('Référence',                'f_ref',             d.ref_produit,       true)+
+    fi('Pannes / problème',        'f_pannes',          d.designation_piece, true)+
+    fi('Magasin',                  'f_enseigne',        d.nom_enseigne,      true)+
+    fi('Numéro de lot',            'f_lot',             '',                  true)+
+    fi('Commentaires',             'f_commentaires',    '',                  true)+
+    fi('Date réception produit',   'f_date_recep_prod', '',                  true)+
+    fi('Date expédition',          'f_date_expe',       '',                  true)+
+    fi('État produit après SAV',   'f_etat',            'AVOIR',             true, 'etat')+
+    fi('Tracking',                 'f_tracking',        '',                  true)+
+    fi('Livraison',                'f_livraison',       '',                  true, 'transporteur');
+}
+
+function renderFormRemb_SU(d){
+  // Ordre : Date réception | Réception facture | REF. | EAN | Qté |
+  //         Nom enseigne | Département et ville | Commentaire | Numéro CNB |
+  //         Numéro d'accord | Numéro Wisen | DDP/FOB
+  var accord = genAccord('su');
+  G.accordNum = accord;
+  document.getElementById('accord-block').style.display='flex';
+  document.getElementById('accord-val').textContent = accord;
+  document.getElementById('form-section').innerHTML =
+    '<div class="form-title">Système U — Remboursement · Champs à compléter</div>'+
+    fi('Date de réception',    'f_date_recep',   d.date_reception,    false)+
+    fi('Réception de la facture','f_date_facture','',                  true)+
+    fi('Référence (REF.)',      'f_ref',          d.ref_produit,       true)+
+    fi('EAN',                  'f_ean',           d.ean,               true)+
+    fi('Quantité',             'f_qte',           d.quantite||'1',     true)+
+    fi('Nom de l\'enseigne',   'f_enseigne',      d.nom_enseigne,      true)+
+    fi('Département et ville', 'f_depville',      d.departement_ville, true)+
+    fi('Commentaire',          'f_commentaire',   '',                  true)+
+    fi('Numéro CNB',           'f_cnb',           d.numero_cnb,        true)+
+    fi('Numéro d\'accord',     'f_accord',        accord,              false)+
+    fi('Numéro Wisen',         'f_wisen',         '',                  true)+
+    fi('DDP / FOB',            'f_ddp',           '',                  true);
+}
+
+function renderFormRemb_ITS(d){
+  // Ordre : Mois | Date de réception | Prix | Code article | EAN | REF. |
+  //         Département et ville | Code sociétaire | N° d'accord | N° Wisen
+  var accord = genAccord('its');
+  G.accordNum = accord;
+  document.getElementById('accord-block').style.display='flex';
+  document.getElementById('accord-val').textContent = accord;
+  document.getElementById('form-section').innerHTML =
+    '<div class="form-title">Intersport — Remboursement · Champs à compléter</div>'+
+    fi('Mois',                 'f_mois',         d.mois_mail,         true)+
+    fi('Date de réception',    'f_date_recep',   d.date_reception,    false)+
+    fi('Prix',                 'f_prix',         '',                  true)+
+    fi('Code article',         'f_code_article', '',                  true)+
+    fi('EAN',                  'f_ean',          d.ean,               true)+
+    fi('Référence (REF.)',     'f_ref',          d.ref_produit,       true)+
+    fi('Département et ville', 'f_depville',     d.departement_ville, true)+
+    fi('Code sociétaire',      'f_code_soc',     '',                  true)+
+    fi('N° d\'accord',         'f_accord',       accord,              false)+
+    fi('N° Wisen',             'f_wisen',        '',                  true);
+}
+
+// ── NUMÉRO D'ACCORD ──────────────────────────────────────
+function genAccord(client){
+  var now = new Date();
+  var yy  = String(now.getFullYear()).slice(2);
+  var mm  = String(now.getMonth()+1).padStart(2,'0');
+  var key = client==='su' ? 'next_su' : 'next_its';
+  var num = parseInt(localStorage.getItem(key)||'1');
+  var prefix = client==='su' ? 'SU' : 'ITS';
+  return prefix + yy + mm + String(num).padStart(3,'0');
+}
+function incrementAccord(client){
+  var key = client==='su' ? 'next_su' : 'next_its';
+  var num = parseInt(localStorage.getItem(key)||'1');
+  localStorage.setItem(key, String(num+1));
+}
+
+// ── GÉNÉRATION APERÇU CSV ────────────────────────────────
+function getv(id){ var el=document.getElementById(id); return el ? el.value||'' : ''; }
+
+function updateCSV(){
+  if(!G.mode||!G.data) return;
+  var d = G.data;
+  var cols = [];
+  var labels = [];
+
+  if(G.mode==='sav' && G.client==='su'){
+    labels = ['Date réception','Date expédition','Référence','Désignation pièce','Enseigne','Dép. / ville','Tracking','N° CNB','Livraison'];
+    cols   = [d.date_reception||'', getv('f_date_expe'), getv('f_ref'), getv('f_designation'), getv('f_enseigne'), getv('f_depville'), getv('f_tracking'), getv('f_cnb'), getv('f_livraison')];
+  } else if(G.mode==='sav' && G.client==='its'){
+    labels = ['Date','Référence','Pannes','Magasin','N° lot','Commentaires','Date récep. produit','Date expé.','État produit','Tracking','Livraison'];
+    cols   = [d.date_reception||'', getv('f_ref'), getv('f_pannes'), getv('f_enseigne'), getv('f_lot'), getv('f_commentaires'), getv('f_date_recep_prod'), getv('f_date_expe'), getv('f_etat'), getv('f_tracking'), getv('f_livraison')];
+  } else if(G.mode==='remb' && G.client==='su'){
+    labels = ['Date récep.','Date facture','Référence','EAN','Qté','Enseigne','Dép. / ville','Commentaire','N° CNB','N° accord','N° Wisen','DDP/FOB'];
+    cols   = [d.date_reception||'', getv('f_date_facture'), getv('f_ref'), getv('f_ean'), getv('f_qte'), getv('f_enseigne'), getv('f_depville'), getv('f_commentaire'), getv('f_cnb'), G.accordNum||'', getv('f_wisen'), getv('f_ddp')];
+  } else if(G.mode==='remb' && G.client==='its'){
+    labels = ['Mois','Date récep.','Prix','Code article','EAN','Référence','Dép. / ville','Code soc.','N° accord','N° Wisen'];
+    cols   = [getv('f_mois'), d.date_reception||'', getv('f_prix'), getv('f_code_article'), getv('f_ean'), getv('f_ref'), getv('f_depville'), getv('f_code_soc'), G.accordNum||'', getv('f_wisen')];
   }
 
-  // ============================================================
-  // APPEL API CLAUDE
-  // ============================================================
-  function callClaude(prompt, callback) {
-    const apiKey = localStorage.getItem('sav_api_key');
-    if (!apiKey) { showError("Clé API manquante. Va dans Paramètres."); return; }
+  G.csvLine = cols.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join('\t');
 
-    fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) { showError("Erreur API : " + data.error.message); return; }
-      const text = data.content.map(b => b.text || '').join('');
-      callback(text);
-    })
-    .catch(() => showError("Impossible de contacter l'API. Vérifie ta connexion."));
-  }
+  var preview = document.getElementById('csv-preview');
+  preview.innerHTML = cols.map(function(v,i){
+    return '<div class="csv-row">'+
+      '<span class="csv-col-name">'+(labels[i]||'')+'</span>'+
+      '<span class="csv-col-val'+(v?'':' empty')+'">'+(v||'vide')+'</span>'+
+      '</div>';
+  }).join('');
+  document.getElementById('csv-block').style.display='block';
+}
 
-  // ============================================================
-  // AFFICHAGE RÉSULTAT
-  // ============================================================
-  function renderResult(data, today, senderEmail) {
-    setState('result');
+// ── VALIDER ──────────────────────────────────────────────
+function validerDossier(){
+  updateCSV();
+  if(!G.csvLine) return;
+  navigator.clipboard.writeText(G.csvLine).then(function(){
+    if(G.mode==='remb') incrementAccord(G.client);
+    var btn = document.getElementById('btn-valider');
+    btn.textContent = 'Ligne copiée — colle dans Excel (Ctrl+V)';
+    btn.className = 'btn btn-secondary';
+    btn.disabled = true;
+  }).catch(function(){
+    alert('Copie automatique indisponible. Copie le texte manuellement depuis l\'aperçu.');
+  });
+}
 
-    // Bannière statut
-    const banner = document.getElementById('status-banner');
-    const messages = {
-      complet:   { cls: 'ok',   txt: 'Dossier complet — prêt à traiter' },
-      incomplet: { cls: 'warn', txt: 'Informations manquantes — relance nécessaire' },
-      ambigu:    { cls: 'warn', txt: 'Dossier ambigu — vérification recommandée' }
-    };
-    const m = messages[data.statut] || messages['ambigu'];
-    banner.className = 'status-banner ' + m.cls;
-    banner.innerHTML = `<span class="status-dot"></span>${m.txt}`;
+// ── RELANCE ──────────────────────────────────────────────
+function sendRelance(){
+  if(!G.data||!G.data.questions) return;
+  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Afin de traiter votre dossier, nous avons besoin des informations complémentaires suivantes :\n\n"+
+    G.data.questions.map(function(q){ return "— "+q; }).join("\n")+
+    "\n\nMerci de nous revenir dès que possible.\n\nCordialement,\nService SAV";
+  Office.context.mailbox.item.displayReplyAllForm({ htmlBody: corps.replace(/\n/g,'<br>') });
+}
 
-    // Résumé IA
-    const fields = [
-      { label: 'Résumé', val: data.resume },
-      { label: 'Canal', val: data.canal },
-      { label: 'Magasin', val: data.magasin },
-      { label: 'Réf. commande', val: data.ref_commande },
-      { label: 'Réf. produit', val: data.ref_produit },
-      { label: 'Pièce demandée', val: data.piece_demandee },
-      { label: 'Date achat', val: data.date_achat },
-      { label: 'Email réponse', val: data.email_reponse }
-    ];
+// ── CHAT ─────────────────────────────────────────────────
+function toggleChat(){
+  G.chatOpen = !G.chatOpen;
+  document.getElementById('chat-body').style.display = G.chatOpen ? 'block':'none';
+  document.getElementById('chat-icon').textContent   = G.chatOpen ? '▲':'▼';
+}
+function sendChat(){
+  var input = document.getElementById('chat-input');
+  var msg   = input.value.trim();
+  if(!msg) return;
+  input.value='';
 
-    const fs = document.getElementById('fields-section');
-    fs.innerHTML = fields.map(f => `
-      <div class="field-row">
-        <div class="field-label">${f.label}</div>
-        <div class="field-val ${f.val ? '' : 'missing'}">${f.val || 'Non renseigné'}</div>
-      </div>
-    `).join('');
+  var msgs    = document.getElementById('chat-messages');
+  var uDiv    = document.createElement('div');
+  uDiv.className = 'msg-user';
+  uDiv.textContent = msg;
+  msgs.appendChild(uDiv);
 
-    // Questions de relance
-    const qb = document.getElementById('questions-block');
-    if (data.questions && data.questions.length > 0) {
-      qb.style.display = 'block';
-      document.getElementById('questions-list').innerHTML =
-        data.questions.map(q => `<div class="question-item">— ${q}</div>`).join('');
-    } else {
-      qb.style.display = 'none';
-    }
+  var loadDiv = document.createElement('div');
+  loadDiv.className = 'chat-loading';
+  loadDiv.textContent = 'Claude réfléchit…';
+  msgs.appendChild(loadDiv);
+  msgs.scrollTop = msgs.scrollHeight;
 
-    // Ligne CSV pour Excel
-    const num_dossier = 'SAV-' + Date.now().toString().slice(-6);
-    const csvLine = [
-      today,
-      num_dossier,
-      data.canal || '',
-      data.magasin || '',
-      data.ref_commande || '',
-      data.ref_produit || '',
-      data.piece_demandee || '',
-      data.date_achat || '',
-      data.statut || '',
-      ''  // colonne transporteur (à remplir manuellement)
-    ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';');
+  G.chatHistory.push({role:'user', content:msg});
 
-    if (data.statut === 'complet') {
-      document.getElementById('csv-block').style.display = 'block';
-      document.getElementById('csv-text').textContent = csvLine;
-      window._currentCSV = csvLine;
-    } else {
-      document.getElementById('csv-block').style.display = 'none';
-    }
+  var sys = "Tu es un assistant SAV expert. Contexte du dossier : client="+
+    (G.client==='su'?'Système U':'Intersport')+
+    ", statut="+((G.data&&G.data.statut)||'?')+
+    ", traitement choisi="+((G.mode==='sav'?'envoi pièce':G.mode==='remb'?'remboursement':'non choisi'))+
+    ". Sois concis et pratique.";
 
-    // Boutons d'action
-    const ab = document.getElementById('action-bar');
-    if (data.statut === 'complet') {
-      ab.innerHTML = `
-        <button class="btn btn-success" onclick="document.getElementById('csv-block').scrollIntoView()">
-          Copier la ligne Excel
-        </button>
-        <button class="btn btn-secondary" onclick="prepareReplyEmail(false, ${JSON.stringify(data).replace(/</g,'&lt;')})">
-          Préparer email de confirmation
-        </button>
-      `;
-    } else {
-      ab.innerHTML = `
-        <button class="btn btn-warn" onclick="prepareRelanceEmail(${JSON.stringify(data.questions)}, '${data.email_reponse || senderEmail}')">
-          Préparer email de relance
-        </button>
-        <button class="btn btn-secondary" onclick="resetToIdle()">
-          Analyser un autre mail
-        </button>
-      `;
-    }
-  }
+  callClaudeChat(sys, G.chatHistory, function(reply){
+    loadDiv.className   = 'msg-ai';
+    loadDiv.textContent = reply;
+    G.chatHistory.push({role:'assistant', content:reply});
+    msgs.scrollTop = msgs.scrollHeight;
+  });
+}
 
-  // ============================================================
-  // COPIER CSV
-  // ============================================================
-  function copyCSV() {
-    if (!window._currentCSV) return;
-    navigator.clipboard.writeText(window._currentCSV).then(() => {
-      const btn = document.getElementById('btn-copy-csv');
-      btn.textContent = 'Copié !';
-      btn.className = 'btn btn-success';
-      setTimeout(() => {
-        btn.textContent = 'Copier la ligne';
-        btn.className = 'btn btn-secondary';
-      }, 2000);
-    });
-  }
-
-  // ============================================================
-  // PRÉPARER EMAIL DE RELANCE
-  // ============================================================
-  function prepareRelanceEmail(questions, emailDest) {
-    const corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Afin de traiter votre dossier dans les meilleurs délais, nous aurions besoin des informations complémentaires suivantes :\n\n"
-      + questions.map(q => "— " + q).join("\n")
-      + "\n\nMerci de nous revenir dès que possible.\n\nCordialement,\nService SAV";
-
-    Office.context.mailbox.item.displayReplyAllForm({
-      htmlBody: corps.replace(/\n/g, '<br>'),
-    });
-  }
-
-  // ============================================================
-  // ERREUR
-  // ============================================================
-  function showError(msg) {
-    setState('error');
-    document.getElementById('error-msg').textContent = msg;
-  }
+// ── API CLAUDE ───────────────────────────────────────────
+function callClaude(prompt, cb){
+  var key = localStorage.getItem('sav_api_key');
+  if(!key){ showError("Clé API manquante."); return; }
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(data){
+    if(data.error){showError("Erreur API : "+data.error.message);return;}
+    cb(data.content.map(function(b){return b.text||'';}).join(''));
+  }).catch(function(){ showError("Impossible de contacter l'API. Vérifie ta connexion."); });
+}
+function callClaudeChat(sys, history, cb){
+  var key = localStorage.getItem('sav_api_key');
+  if(!key) return;
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:history})
+  }).then(function(r){return r.json();}).then(function(data){
+    if(!data.content) return;
+    cb(data.content.map(function(b){return b.text||'';}).join(''));
+  }).catch(function(){});
+}
+function showError(msg){
+  setState('error');
+  document.getElementById('error-msg').textContent=msg;
+}
 </script>
 </body>
 </html>
