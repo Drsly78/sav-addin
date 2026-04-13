@@ -344,6 +344,7 @@
     <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Copier demande pièces jointes</button>
     <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Copier demande informations</button>
     <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
+    <button class="btn btn-secondary" id="btn-csv-fallback"  style="display:none" onclick="validerCSVSemicolon()">Copier format CSV (;) — si Ctrl+V ne fonctionne pas</button>
     <div class="sep"></div>
     <button class="btn btn-secondary" onclick="resetToIdle()">Nouveau mail</button>
   </div>
@@ -566,25 +567,31 @@ function runAnalysis(){
     lines.push("");
   }
 
+  lines.push("REGLES STRICTES :");
+  lines.push("- ref_produit : copie la reference EXACTE du mail (ex: ABD-SFKD268WD). Si plusieurs refs, prends la ref article. Ne pas mettre une description.");
+  lines.push("- date_reception : cherche TOUS les formats de date dans le mail : JJ/MM/AAAA, JJ-MM-AAAA, 'le XX mois AAAA', 'envoyé le', 'date:', en-tete email. Si tu en trouves une, mets-la au format DD/MM/YYYY.");
+  lines.push("- designation_piece : max 8 mots, synthetique, ex: 'Coussin assise salon jardin x2'");
+  lines.push("- nom_enseigne : UNIQUEMENT 'SUPER U', 'HYPER U' ou 'U EXPRESS' pour SU — pas d'autre valeur");
+  lines.push("");
   lines.push("JSON attendu :");
   lines.push("{");
   lines.push("  \"client\": \"su\" ou \"its\",");
   lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" si SU, sinon nom magasin,");
-  lines.push("  \"departement_ville\": \"ex: 75 PARIS\",");
-  lines.push("  \"ref_produit\": \"reference produit ou null\",");
-  lines.push("  \"ean\": \"code EAN ou null\",");
-  lines.push("  \"designation_piece\": \"description COURTE max 8 mots ex: Fermeture eclair panneau avant x1\",");
-  lines.push("  \"numero_dossier\": \"numero de dossier CNB du mail ou null\",");
-  lines.push("  \"quantite\": \"quantite, 1 par defaut\",");
-  lines.push("  \"mois_mail\": \"format MM/YYYY\",");
-  lines.push("  \"date_reception\": \"date EXACTE du mail DD/MM/YYYY — cherche dans l'en-tete, la date d'envoi, le corps ou la signature\",");
+  lines.push("  \"departement_ville\": \"ex: 67 PARIS\",");
+  lines.push("  \"ref_produit\": \"REFERENCE EXACTE copiee du mail — PAS une description\",");
+  lines.push("  \"ean\": \"code EAN 13 chiffres ou null\",");
+  lines.push("  \"designation_piece\": \"description courte max 8 mots\",");
+  lines.push("  \"numero_dossier\": \"numero de dossier du mail ou null\",");
+  lines.push("  \"quantite\": \"quantite numerique, 1 par defaut\",");
+  lines.push("  \"mois_mail\": \"format MM/YYYY ou null\",");
+  lines.push("  \"date_reception\": \"date du mail DD/MM/YYYY ou null si introuvable\",");
   lines.push("  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",");
-  lines.push("  \"questions\": [\"infos manquantes\"],");
-  lines.push("  \"resume\": \"1 phrase claire resumant le probleme\",");
+  lines.push("  \"questions\": [\"questions si infos manquantes, tableau vide sinon\"],");
+  lines.push("  \"resume\": \"1 phrase claire resumant le probleme et la demande\",");
   lines.push("  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",");
   lines.push("  \"raison_suggestion\": \"courte justification\",");
   lines.push("  \"ticket_present\": true si image ticket/facture/recu identifiee, false sinon,");
-  lines.push("  \"analyse_pj\": [{\"type\": \"TICKET_FACTURE/NOTICE/PHOTO_DEFAUT/AUTRE\", \"description\": \"ce que tu vois\"}],");
+  lines.push("  \"analyse_pj\": [{\"type\": \"TICKET_FACTURE/NOTICE/PHOTO_DEFAUT/AUTRE\", \"description\": \"ce que tu vois precisement\"}],");
   lines.push("  \"analyse_photos\": \"synthese des defauts visibles ou null\",");
   lines.push("  \"defaut_visible\": true ou false");
   lines.push("}");
@@ -910,19 +917,26 @@ function updateCSV(){
   if(!G.mode||!G.data) return;
   var d=G.data, cols=[], labels=[];
   if(G.mode==='sav'&&G.client==='su'){
-    labels=['Date récep.','Réf.','Désignation','Enseigne','Dép./ville','N° dossier','Livraison'];
-    cols=[d.date_reception||'',getv('f_ref'),getv('f_designation'),getv('f_enseigne'),getv('f_depville'),getv('f_cnb'),getv('f_livraison')];
+    // Ordre exact tableau SYSTEME U : Date réception | Date expédition | Référence produit | Désignation pièces | Nom enseigne | Département et ville | Tracking | Numéro CNB | Livraison
+    labels=['Date récep.','Date expé. (à remplir)','Référence produit','Désignation pièces','Enseigne','Département et ville','Tracking (à remplir)','N° dossier','Livraison (à remplir)'];
+    cols=[d.date_reception||'', '', getv('f_ref'), getv('f_designation'), getv('f_enseigne'), getv('f_depville'), '', getv('f_cnb'), ''];
   } else if(G.mode==='sav'&&G.client==='its'){
-    labels=['Date','Réf.','Pannes','Magasin','Livraison'];
-    cols=[d.date_reception||'',getv('f_ref'),getv('f_pannes'),getv('f_enseigne'),getv('f_livraison')];
+    // Ordre exact tableau INTERSPORT : Date | Référence | Numéro de lot | Pannes | Magasin | Commentaires | Date réception produit | Date expédition | État produit | Tracking | Livraison
+    labels=['Date','Référence','N° lot (à remplir)','Pannes','Magasin','Commentaires (à remplir)','Date récep. produit (à remplir)','Date expé. (à remplir)','État produit (à remplir)','Tracking (à remplir)','Livraison (à remplir)'];
+    cols=[d.date_reception||'', getv('f_ref'), '', getv('f_pannes'), getv('f_enseigne'), '', '', '', '', '', ''];
   } else if(G.mode==='remb'&&G.client==='su'){
-    labels=['Date récep.','Réf.','EAN','Qté','Enseigne','Dép./ville','N° dossier','N° accord'];
-    cols=[d.date_reception||'',getv('f_ref'),getv('f_ean'),getv('f_qte'),getv('f_enseigne'),getv('f_depville'),getv('f_cnb'),G.accordNum||''];
+    // Ordre exact tableau REMBOURSEMENT SU : Date réception | Réception facture | REF. | EAN | Qté | Nom enseigne | Département et ville | Commentaire | Numéro CNB | N° accord | N° Wisen | DDP/FOB
+    labels=['Date récep.','Récep. facture (à remplir)','Référence','EAN','Qté','Enseigne','Département et ville','Commentaire (à remplir)','N° dossier','N° accord','N° Wisen (à remplir)','DDP/FOB (à remplir)'];
+    cols=[d.date_reception||'', '', getv('f_ref'), getv('f_ean'), getv('f_qte'), getv('f_enseigne'), getv('f_depville'), '', getv('f_cnb'), G.accordNum||'', '', ''];
   } else if(G.mode==='remb'&&G.client==='its'){
-    labels=['Mois','Date récep.','EAN','Réf.','Dép./ville','N° accord'];
-    cols=[getv('f_mois'),d.date_reception||'',getv('f_ean'),getv('f_ref'),getv('f_depville'),G.accordNum||''];
+    // Ordre exact tableau REMBOURSEMENT ITS : Mois | Date réception | Prix | Code article | EAN | REF. | Département et ville | Code sociétaire | N° accord | N° Wisen
+    labels=['Mois','Date récep.','Prix (à remplir)','Code article (à remplir)','EAN','Référence','Département et ville','Code sociétaire (à remplir)','N° accord','N° Wisen (à remplir)'];
+    cols=[getv('f_mois'), d.date_reception||'', '', '', getv('f_ean'), getv('f_ref'), getv('f_depville'), '', G.accordNum||'', ''];
   }
-  G.csvLine = cols.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join('\t');
+  // Générer TSV (tabulations) — dans Excel : Ctrl+V fonctionne directement
+  G.csvLine = cols.map(function(v){return String(v).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');
+  // Aussi générer CSV point-virgule pour fallback
+  G.csvLineSemicolon = cols.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');
   var preview = document.getElementById('csv-preview');
   preview.innerHTML = cols.map(function(v,i){
     return '<div class="csv-row"><span class="csv-col-name">'+(labels[i]||'')+'</span><span class="csv-col-val'+(v?'':' empty')+'">'+(v||'vide')+'</span></div>';
@@ -934,14 +948,28 @@ function updateCSV(){
 function validerDossier(){
   updateCSV();
   if(!G.csvLine) return;
+  // Essayer TSV d'abord (colle directement dans Excel)
   navigator.clipboard.writeText(G.csvLine).then(function(){
     if(G.mode==='remb') incrementAccord(G.client);
     var btn = document.getElementById('btn-valider');
-    btn.textContent='Ligne copiée — colle dans Excel (Ctrl+V)';
+    btn.textContent='Copié — colle avec Ctrl+V dans Excel';
     btn.className='btn btn-secondary';
     btn.disabled=true;
+    // Afficher le bouton fallback CSV
+    var fb = document.getElementById('btn-csv-fallback');
+    if(fb) fb.style.display='block';
   }).catch(function(){
-    alert('Copie auto indisponible. Copie depuis l\'aperçu manuellement.');
+    alert('Copie auto indisponible.');
+  });
+}
+
+function validerCSVSemicolon(){
+  if(!G.csvLineSemicolon) return;
+  navigator.clipboard.writeText(G.csvLineSemicolon).then(function(){
+    var btn = document.getElementById('btn-csv-fallback');
+    btn.textContent='Copié (CSV ;) — dans Excel : Données > Convertir';
+    btn.className='btn btn-secondary';
+    btn.disabled=true;
   });
 }
 
