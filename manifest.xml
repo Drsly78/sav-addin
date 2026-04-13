@@ -7,7 +7,7 @@
 
   <Id>a1b2c3d4-e5f6-7890-abcd-ef1234567890</Id>
   <Version>1.0.0</Version>
-  <ProviderName>SAV Interne</ProviderName>
+  SourceLocation<ProviderName>SAV Interne</ProviderName>
   <DefaultLocale>fr-FR</DefaultLocale>
   <DisplayName DefaultValue="SAV Analyser"/>
   <Description DefaultValue="Analyse les emails SAV et prépare la fiche de traitement"/>
@@ -25,7 +25,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://VOTRE-DOMAINE/sav-addin/taskpane.html"/>
+        <SourceLocation DefaultValue="https://drsly78.github.io/sav-addin/taskpane.html"/>
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -77,13 +77,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://VOTRE-DOMAINE/sav-addin/icon16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://VOTRE-DOMAINE/sav-addin/icon32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://VOTRE-DOMAINE/sav-addin/icon80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://drsly78.github.io/sav-addin/icon16.png"/>
+<bt:Image id="Icon.32x32" DefaultValue="https://drsly78.github.io/sav-addin/icon32.png"/>
+<bt:Image id="Icon.80x80" DefaultValue="https://drsly78.github.io/sav-addin/icon80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://VOTRE-DOMAINE/sav-addin/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://VOTRE-DOMAINE/sav-addin/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://drsly78.github.io/sav-addin/commands.html"/>
+<bt:Url id="Taskpane.Url" DefaultValue="https://drsly78.github.io/sav-addin/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="SAV"/>
