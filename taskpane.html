@@ -1093,10 +1093,13 @@ function callClaudeRaw(messages, maxTokens, cb){
     signal:controller.signal,
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens||1000,messages:messages})
-  }).then(function(r){return r.json();})
+  }).then(function(r){
+    if(!r.ok) return r.json().then(function(e){ throw new Error('HTTP '+r.status+' — '+(e.error?e.error.message:JSON.stringify(e))); });
+    return r.json();
+  })
   .then(function(data){
     clearTimeout(timeout);
-    if(data.error){showError("Erreur API : "+data.error.message);return;}
+    if(data.error){showError("Erreur API ["+data.error.type+"] : "+data.error.message);return;}
     cb(data.content.map(function(b){return b.text||'';}).join(''));
   })
   .catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
