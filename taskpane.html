@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SAV Analyser</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 13px;
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+
+    /* ---- ÉCRAN CONFIG ---- */
+    #screen-config {
+      padding: 20px;
+    }
+    #screen-config h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    #screen-config p {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    #screen-config input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      font-family: monospace;
+    }
+    #screen-config input:focus {
+      outline: none;
+      border-color: #0078d4;
+    }
+
+    /* ---- ÉCRAN PRINCIPAL ---- */
+    #screen-main { display: none; }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    .topbar-settings {
+      font-size: 11px;
+      color: #0078d4;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    /* ---- ÉTAT : EN ATTENTE ---- */
+    #state-idle {
+      padding: 40px 20px;
+      text-align: center;
+    }
+    #state-idle .idle-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e8f0fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+    #state-idle p {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* ---- ÉTAT : CHARGEMENT ---- */
+    #state-loading {
+      display: none;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #0078d4;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #state-loading p { font-size: 12px; color: #666; }
+
+    /* ---- ÉTAT : RÉSULTAT ---- */
+    #state-result { display: none; }
+
+    .status-banner {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-banner.ok { background: #e6f4ea; color: #1e7e34; }
+    .status-banner.warn { background: #fff8e1; color: #b45309; }
+    .status-banner.error { background: #fde8e8; color: #b91c1c; }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ok .status-dot { background: #1e7e34; }
+    .warn .status-dot { background: #b45309; }
+
+    .fields-section {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-row {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .field-label {
+      font-size: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+    .field-val {
+      font-size: 13px;
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+    .field-val.missing {
+      color: #b45309;
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .questions-block {
+      margin: 0 14px;
+      background: #fff8e1;
+      border: 1px solid #f0c040;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .questions-label {
+      font-size: 11px;
+      color: #b45309;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .question-item {
+      font-size: 12px;
+      color: #1a1a1a;
+      padding: 3px 0;
+      line-height: 1.5;
+      border-bottom: 1px solid #f0e0a0;
+    }
+    .question-item:last-child { border-bottom: none; }
+
+    .csv-block {
+      margin: 8px 14px 0;
+      background: #f0f7ff;
+      border: 1px solid #b3d4f5;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .csv-label {
+      font-size: 11px;
+      color: #0078d4;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .csv-text {
+      font-family: monospace;
+      font-size: 11px;
+      color: #333;
+      background: #fff;
+      border: 1px solid #d0e8f8;
+      border-radius: 4px;
+      padding: 6px 8px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      max-height: 60px;
+      overflow-y: auto;
+      margin-bottom: 6px;
+    }
+
+    .action-bar {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-top: 1px solid #e8e8e8;
+      background: #fff;
+      position: sticky;
+      bottom: 0;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-align: center;
+    }
+    .btn-primary { background: #0078d4; color: #fff; border-color: #0078d4; }
+    .btn-primary:hover { background: #006abd; }
+    .btn-warn { background: #fff8e1; color: #b45309; border-color: #f0c040; }
+    .btn-warn:hover { background: #fff0c0; }
+    .btn-secondary { background: #f5f5f5; color: #555; border-color: #d0d0d0; }
+    .btn-secondary:hover { background: #ebebeb; }
+    .btn-success { background: #e6f4ea; color: #1e7e34; border-color: #a8d5b5; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .success-msg {
+      font-size: 12px;
+      color: #1e7e34;
+      font-weight: 500;
+      text-align: center;
+      padding: 6px 0;
+    }
+
+    /* ---- ÉTAT : ERREUR ---- */
+    #state-error {
+      display: none;
+      padding: 20px;
+      text-align: center;
+    }
+    #state-error p { font-size: 12px; color: #b91c1c; line-height: 1.5; }
+
+    .section-sep {
+      height: 1px;
+      background: #e8e8e8;
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== ÉCRAN CONFIG ========== -->
+<div id="screen-config">
+  <h2>Configuration SAV</h2>
+  <p>Entre ta clé API Claude pour activer l'analyse. Elle sera stockée uniquement sur ce PC, jamais envoyée ailleurs.</p>
+  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."/>
+  <button class="btn btn-primary" onclick="saveConfig()">Enregistrer et démarrer</button>
+  <p style="margin-top:10px;font-size:11px;color:#999;">Tu peux obtenir une clé sur console.anthropic.com → API Keys</p>
+</div>
+
+<!-- ========== ÉCRAN PRINCIPAL ========== -->
+<div id="screen-main">
+
+  <div class="topbar">
+    <span class="topbar-title">SAV Analyser</span>
+    <button class="topbar-settings" onclick="showConfig()">Paramètres</button>
+  </div>
+
+  <!-- Idle -->
+  <div id="state-idle">
+    <div class="idle-icon">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="#0078d4" stroke-width="1.5"/>
+        <path d="M10 6v4l2.5 2.5" stroke="#0078d4" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <p>Clique sur <strong>Analyser ce mail</strong> dans le ruban Outlook pour lancer l'analyse.</p>
+    <br/>
+    <button class="btn btn-primary" onclick="analyzeEmail()" style="max-width:200px;margin:0 auto;">
+      Analyser ce mail
+    </button>
+  </div>
+
+  <!-- Chargement -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <p>Analyse en cours…</p>
+  </div>
+
+  <!-- Résultat -->
+  <div id="state-result">
+    <div id="status-banner" class="status-banner"></div>
+
+    <div class="fields-section" id="fields-section"></div>
+
+    <div id="questions-block" class="questions-block" style="display:none">
+      <div class="questions-label">Questions à envoyer au magasin</div>
+      <div id="questions-list"></div>
+    </div>
+
+    <div id="csv-block" class="csv-block" style="display:none">
+      <div class="csv-label">Ligne Excel — copier-coller</div>
+      <div class="csv-text" id="csv-text"></div>
+      <button class="btn btn-secondary" onclick="copyCSV()" id="btn-copy-csv">Copier la ligne</button>
+    </div>
+
+    <div class="section-sep" style="margin:10px 0 0"></div>
+
+    <div class="action-bar" id="action-bar"></div>
+  </div>
+
+  <!-- Erreur -->
+  <div id="state-error">
+    <p id="error-msg"></p>
+    <br/>
+    <button class="btn btn-secondary" onclick="resetToIdle()">Réessayer</button>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // INIT OFFICE.JS
+  // ============================================================
+  Office.onReady(function(info) {
+    if (localStorage.getItem('sav_api_key')) {
+      showMain();
+    }
+  });
+
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  function saveConfig() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      alert('La clé ne semble pas valide. Elle doit commencer par sk-ant-');
+      return;
+    }
+    localStorage.setItem('sav_api_key', key);
+    showMain();
+  }
+
+  function showConfig() {
+    document.getElementById('screen-config').style.display = 'block';
+    document.getElementById('screen-main').style.display = 'none';
+  }
+
+  function showMain() {
+    document.getElementById('screen-config').style.display = 'none';
+    document.getElementById('screen-main').style.display = 'block';
+    resetToIdle();
+  }
+
+  function resetToIdle() {
+    setState('idle');
+  }
+
+  // ============================================================
+  // GESTION DES ÉTATS
+  // ============================================================
+  function setState(s) {
+    document.getElementById('state-idle').style.display    = s === 'idle'    ? 'block' : 'none';
+    document.getElementById('state-loading').style.display = s === 'loading' ? 'block' : 'none';
+    document.getElementById('state-result').style.display  = s === 'result'  ? 'block' : 'none';
+    document.getElementById('state-error').style.display   = s === 'error'   ? 'block' : 'none';
+  }
+
+  // ============================================================
+  // ANALYSE EMAIL
+  // ============================================================
+  function analyzeEmail() {
+    setState('loading');
+
+    Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result) {
+      if (result.status !== Office.AsyncResultStatus.Succeeded) {
+        showError("Impossible de lire le contenu du mail.");
+        return;
+      }
+
+      const subject = Office.context.mailbox.item.subject || '';
+      const sender  = Office.context.mailbox.item.from
+                      ? Office.context.mailbox.item.from.emailAddress : '';
+      const body    = result.value || '';
+
+      const today = new Date().toLocaleDateString('fr-FR');
+
+      const prompt = `Tu es un assistant SAV. Analyse cet email de demande de SAV et extrais les informations suivantes au format JSON strict.
+
+Email :
+Expéditeur : ${sender}
+Objet : ${subject}
+Corps : ${body}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, avec exactement ces clés :
+{
+  "canal": "Intersport" ou "Système U" ou "Autre",
+  "magasin": "nom du magasin ou null",
+  "ref_commande": "référence commande ou null",
+  "ref_produit": "référence produit ou null",
+  "piece_demandee": "description précise de la pièce ou null",
+  "date_achat": "date ou null",
+  "email_reponse": "email expéditeur",
+  "statut": "complet" ou "incomplet" ou "ambigu",
+  "resume": "1 phrase résumant la demande",
+  "questions": ["question 1", "question 2"] (tableau vide si dossier complet)
+}
+
+Règles :
+- statut = "complet" si toutes les infos essentielles sont présentes (magasin, pièce, réf produit)
+- statut = "incomplet" si des infos clés manquent
+- statut = "ambigu" si les infos sont présentes mais floues ou contradictoires
+- questions = liste des questions précises à poser au magasin pour compléter le dossier`;
+
+      callClaude(prompt, function(jsonStr) {
+        try {
+          const data = JSON.parse(jsonStr.replace(/```json|```/g, '').trim());
+          renderResult(data, today, sender);
+        } catch(e) {
+          showError("Erreur lors du décodage de la réponse IA. Réessaye.");
+        }
+      });
+    });
+  }
+
+  // ============================================================
+  // APPEL API CLAUDE
+  // ============================================================
+  function callClaude(prompt, callback) {
+    const apiKey = localStorage.getItem('sav_api_key');
+    if (!apiKey) { showError("Clé API manquante. Va dans Paramètres."); return; }
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { showError("Erreur API : " + data.error.message); return; }
+      const text = data.content.map(b => b.text || '').join('');
+      callback(text);
+    })
+    .catch(() => showError("Impossible de contacter l'API. Vérifie ta connexion."));
+  }
+
+  // ============================================================
+  // AFFICHAGE RÉSULTAT
+  // ============================================================
+  function renderResult(data, today, senderEmail) {
+    setState('result');
+
+    // Bannière statut
+    const banner = document.getElementById('status-banner');
+    const messages = {
+      complet:   { cls: 'ok',   txt: 'Dossier complet — prêt à traiter' },
+      incomplet: { cls: 'warn', txt: 'Informations manquantes — relance nécessaire' },
+      ambigu:    { cls: 'warn', txt: 'Dossier ambigu — vérification recommandée' }
+    };
+    const m = messages[data.statut] || messages['ambigu'];
+    banner.className = 'status-banner ' + m.cls;
+    banner.innerHTML = `<span class="status-dot"></span>${m.txt}`;
+
+    // Résumé IA
+    const fields = [
+      { label: 'Résumé', val: data.resume },
+      { label: 'Canal', val: data.canal },
+      { label: 'Magasin', val: data.magasin },
+      { label: 'Réf. commande', val: data.ref_commande },
+      { label: 'Réf. produit', val: data.ref_produit },
+      { label: 'Pièce demandée', val: data.piece_demandee },
+      { label: 'Date achat', val: data.date_achat },
+      { label: 'Email réponse', val: data.email_reponse }
+    ];
+
+    const fs = document.getElementById('fields-section');
+    fs.innerHTML = fields.map(f => `
+      <div class="field-row">
+        <div class="field-label">${f.label}</div>
+        <div class="field-val ${f.val ? '' : 'missing'}">${f.val || 'Non renseigné'}</div>
+      </div>
+    `).join('');
+
+    // Questions de relance
+    const qb = document.getElementById('questions-block');
+    if (data.questions && data.questions.length > 0) {
+      qb.style.display = 'block';
+      document.getElementById('questions-list').innerHTML =
+        data.questions.map(q => `<div class="question-item">— ${q}</div>`).join('');
+    } else {
+      qb.style.display = 'none';
+    }
+
+    // Ligne CSV pour Excel
+    const num_dossier = 'SAV-' + Date.now().toString().slice(-6);
+    const csvLine = [
+      today,
+      num_dossier,
+      data.canal || '',
+      data.magasin || '',
+      data.ref_commande || '',
+      data.ref_produit || '',
+      data.piece_demandee || '',
+      data.date_achat || '',
+      data.statut || '',
+      ''  // colonne transporteur (à remplir manuellement)
+    ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';');
+
+    if (data.statut === 'complet') {
+      document.getElementById('csv-block').style.display = 'block';
+      document.getElementById('csv-text').textContent = csvLine;
+      window._currentCSV = csvLine;
+    } else {
+      document.getElementById('csv-block').style.display = 'none';
+    }
+
+    // Boutons d'action
+    const ab = document.getElementById('action-bar');
+    if (data.statut === 'complet') {
+      ab.innerHTML = `
+        <button class="btn btn-success" onclick="document.getElementById('csv-block').scrollIntoView()">
+          Copier la ligne Excel
+        </button>
+        <button class="btn btn-secondary" onclick="prepareReplyEmail(false, ${JSON.stringify(data).replace(/</g,'&lt;')})">
+          Préparer email de confirmation
+        </button>
+      `;
+    } else {
+      ab.innerHTML = `
+        <button class="btn btn-warn" onclick="prepareRelanceEmail(${JSON.stringify(data.questions)}, '${data.email_reponse || senderEmail}')">
+          Préparer email de relance
+        </button>
+        <button class="btn btn-secondary" onclick="resetToIdle()">
+          Analyser un autre mail
+        </button>
+      `;
+    }
+  }
+
+  // ============================================================
+  // COPIER CSV
+  // ============================================================
+  function copyCSV() {
+    if (!window._currentCSV) return;
+    navigator.clipboard.writeText(window._currentCSV).then(() => {
+      const btn = document.getElementById('btn-copy-csv');
+      btn.textContent = 'Copié !';
+      btn.className = 'btn btn-success';
+      setTimeout(() => {
+        btn.textContent = 'Copier la ligne';
+        btn.className = 'btn btn-secondary';
+      }, 2000);
+    });
+  }
+
+  // ============================================================
+  // PRÉPARER EMAIL DE RELANCE
+  // ============================================================
+  function prepareRelanceEmail(questions, emailDest) {
+    const corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Afin de traiter votre dossier dans les meilleurs délais, nous aurions besoin des informations complémentaires suivantes :\n\n"
+      + questions.map(q => "— " + q).join("\n")
+      + "\n\nMerci de nous revenir dès que possible.\n\nCordialement,\nService SAV";
+
+    Office.context.mailbox.item.displayReplyAllForm({
+      htmlBody: corps.replace(/\n/g, '<br>'),
+    });
+  }
+
+  // ============================================================
+  // ERREUR
+  // ============================================================
+  function showError(msg) {
+    setState('error');
+    document.getElementById('error-msg').textContent = msg;
+  }
+</script>
+</body>
+</html>
