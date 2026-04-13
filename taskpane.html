@@ -24,29 +24,50 @@
     .topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .topbar-title{font-size:13px;font-weight:600}
     .topbar-btn{font-size:11px;color:#0078d4;background:none;border:none;cursor:pointer;padding:2px 6px}
-
     .scroll-area{flex:1;overflow-y:auto;padding-bottom:16px}
 
     /* IDLE */
-    #state-idle{padding:30px 16px;text-align:center}
-    #state-idle p{font-size:12px;color:#666;line-height:1.6;margin-bottom:16px}
+    #state-idle{padding:20px 16px}
+    #state-idle p{font-size:12px;color:#666;line-height:1.6;margin-bottom:14px;text-align:center}
+
+    /* TEST ZONE */
+    .test-zone{border-top:1px solid #e8e8e8;padding-top:14px;margin-top:4px}
+    .test-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    textarea#test-mail{width:100%;height:100px;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:"Segoe UI",Arial,sans-serif;resize:vertical;color:#333;background:#fff}
+    input#test-subject{width:100%;margin-top:5px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:"Segoe UI",Arial,sans-serif}
+    textarea#test-mail:focus,input#test-subject:focus{outline:none;border-color:#0078d4}
+
+    /* PJ UPLOAD */
+    .pj-upload-zone{margin-top:8px}
+    .pj-upload-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+    .pj-upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+    .pj-slot{border:1.5px dashed #d0d0d0;border-radius:6px;padding:8px 4px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
+    .pj-slot:hover{border-color:#0078d4}
+    .pj-slot.has-file{border-color:#1e7e34;border-style:solid;background:#f0faf3}
+    .pj-slot.required{border-color:#f0c040}
+    .pj-slot.required.has-file{border-color:#1e7e34}
+    .pj-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .pj-slot-icon{font-size:16px;margin-bottom:3px}
+    .pj-slot-name{font-size:10px;font-weight:600;color:#555;line-height:1.3}
+    .pj-slot-sub{font-size:9px;color:#aaa;margin-top:1px}
+    .pj-slot.required .pj-slot-sub{color:#b45309}
+    .pj-badge-ok{font-size:9px;color:#1e7e34;font-weight:600;margin-top:2px}
 
     /* LOADING */
     #state-loading{display:none;padding:50px 16px;text-align:center}
     .spinner{width:26px;height:26px;border:3px solid #e0e0e0;border-top-color:#0078d4;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
     @keyframes spin{to{transform:rotate(360deg)}}
     #state-loading p{font-size:12px;color:#666}
+    #state-loading .loading-sub{font-size:11px;color:#aaa;margin-top:4px}
 
     /* RESULT */
     #state-result{display:none}
-
-    /* ERROR */
     #state-error{display:none;padding:20px;text-align:center}
     #state-error p{font-size:12px;color:#b91c1c;line-height:1.5}
 
     /* CLIENT BADGE */
     .client-row{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
-    .client-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.02em}
+    .client-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700}
     .badge-u{background:#e8f0fe;color:#1a56db}
     .badge-its{background:#fce8d5;color:#c2410c}
     .badge-unknown{background:#f3f4f6;color:#555}
@@ -55,24 +76,40 @@
     .pill-warn{background:#fff8e1;color:#b45309}
     .pill-error{background:#fde8e8;color:#b91c1c}
 
-    /* RECAP CARD */
-    .recap-card{margin:10px 12px 0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
-    .recap-header{padding:8px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
-    .recap-resume{padding:10px 12px;font-size:13px;color:#1a1a1a;line-height:1.5;border-bottom:1px solid #f0f0f0;font-style:italic;color:#444}
-    .recap-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-    .recap-item{padding:8px 12px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
+    /* PJ STATUS */
+    .pj-status{margin:8px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .pj-status-header{background:#f8f8f8;padding:6px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+    .pj-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid #f0f0f0;font-size:12px}
+    .pj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .pj-dot-ok{background:#1e7e34}
+    .pj-dot-warn{background:#b45309}
+    .pj-dot-error{background:#b91c1c}
+    .pj-item-label{flex:1;color:#1a1a1a}
+    .pj-item-action{font-size:11px;color:#0078d4;cursor:pointer;background:none;border:none;padding:0}
+    .pj-item-ignore{font-size:11px;color:#aaa;cursor:pointer;background:none;border:none;padding:0;margin-left:4px}
+
+    /* RECAP */
+    .recap-card{margin:8px 12px 0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .recap-header{padding:7px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+    .recap-resume{padding:9px 12px;font-size:13px;color:#444;line-height:1.5;border-bottom:1px solid #f0f0f0;font-style:italic}
+    .recap-grid{display:grid;grid-template-columns:1fr 1fr}
+    .recap-item{padding:7px 12px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
     .recap-item:nth-child(even){border-right:none}
-    .recap-item:nth-last-child(-n+2){border-bottom:none}
-    .recap-item-full{padding:8px 12px;border-bottom:1px solid #f0f0f0;grid-column:1/-1}
-    .recap-item-full:last-child{border-bottom:none}
+    .recap-item-full{padding:7px 12px;border-bottom:1px solid #f0f0f0;grid-column:1/-1}
+    .recap-item:last-child,.recap-item-full:last-child{border-bottom:none}
     .ri-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
     .ri-val{font-size:12px;color:#1a1a1a;font-weight:500;line-height:1.4}
     .ri-val.missing{color:#b45309;font-style:italic;font-weight:400}
     .ri-val.suggest{color:#1a56db;font-weight:600}
 
+    /* PHOTO ANALYSE */
+    .photo-analyse{margin:8px 12px 0;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:9px 12px}
+    .photo-analyse-label{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+    .photo-analyse-text{font-size:12px;color:#1a1a1a;line-height:1.5}
+
     /* QUESTIONS */
-    .questions-block{margin:8px 12px 0;background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:10px 12px}
-    .questions-title{font-size:11px;color:#b45309;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .questions-block{margin:8px 12px 0;background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:9px 12px}
+    .questions-title{font-size:11px;color:#b45309;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
     .q-item{font-size:12px;color:#1a1a1a;padding:3px 0;line-height:1.5;display:flex;gap:6px}
     .q-item:before{content:"–";color:#b45309;flex-shrink:0}
 
@@ -80,7 +117,7 @@
     .decision-section{margin:10px 12px 0}
     .decision-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
     .decision-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .dbtn{padding:12px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;text-align:center;transition:all .15s;line-height:1.3}
+    .dbtn{padding:11px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;text-align:center;transition:all .15s;line-height:1.3}
     .dbtn-sav{background:#e6f4ea;color:#1e7e34;border-color:#a8d5b5}
     .dbtn-sav:hover,.dbtn-sav.active{background:#1e7e34;color:#fff;border-color:#1e7e34}
     .dbtn-remb{background:#fff0f0;color:#b91c1c;border-color:#f5b5b5}
@@ -88,10 +125,10 @@
     .dbtn-sub{font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:.8}
 
     /* FORM */
-    .form-section{margin:10px 12px 0;display:flex;flex-direction:column;gap:5px}
+    .form-section{margin:8px 12px 0;display:flex;flex-direction:column;gap:5px}
     .form-title{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:4px 0 2px}
     .field-group{background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:7px 10px}
-    .field-group.highlight{border-color:#0078d4;background:#f8fbff}
+    .field-group.required-field{border-color:#f0c040;background:#fffef5}
     .fl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
     .fv{font-size:12px;color:#1a1a1a;font-weight:500}
     .fv.missing{color:#b45309;font-style:italic;font-weight:400}
@@ -106,7 +143,7 @@
     .accord-val{font-size:18px;font-weight:700;color:#0078d4;font-family:monospace;letter-spacing:.06em}
 
     /* CSV */
-    .csv-block{margin:8px 12px 0;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px}
+    .csv-block{margin:8px 12px 0;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px}
     .csv-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
     .csv-preview{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
     .csv-row{display:flex;gap:6px;font-size:11px;align-items:baseline}
@@ -117,8 +154,11 @@
     /* CHAT */
     .chat-section{margin:10px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
     .chat-header{background:#f5f5f5;padding:8px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
-    .chat-messages{background:#fff;max-height:180px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px}
-    .msg-ai{background:#f0f7ff;border:1px solid #cce0f5;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.5}
+    .chat-messages{background:#fff;max-height:200px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+    .msg-ai{background:#f0f7ff;border:1px solid #cce0f5;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.6}
+    .msg-ai strong{font-weight:600;color:#0078d4}
+    .msg-ai ul{margin:4px 0 4px 14px}
+    .msg-ai li{margin-bottom:2px}
     .msg-user{background:#e8f0fe;border:1px solid #c0d4f8;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.5;align-self:flex-end;max-width:88%}
     .chat-loading{color:#999;font-style:italic;font-size:12px;padding:6px 9px}
     .chat-input-row{display:flex;gap:5px;padding:7px 8px;border-top:1px solid #e8e8e8;background:#fafafa}
@@ -132,6 +172,7 @@
     .btn-primary{background:#0078d4;color:#fff;border-color:#0078d4}
     .btn-success{background:#1e7e34;color:#fff;border-color:#1e7e34}
     .btn-warn{background:#fff8e1;color:#b45309;border-color:#f0c040}
+    .btn-danger{background:#fde8e8;color:#b91c1c;border-color:#f5b5b5}
     .btn-secondary{background:#f5f5f5;color:#555;border-color:#d0d0d0}
     .btn:disabled{opacity:.5;cursor:default}
     .sep{height:1px;background:#e8e8e8;margin:2px 0}
@@ -175,57 +216,93 @@
 
     <!-- IDLE -->
     <div id="state-idle">
-      <p>Ouvre un mail SAV puis clique sur Analyser pour lancer l'analyse IA.</p>
-      <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">
-        Analyser ce mail
-      </button>
-      <div style="margin-top:20px;border-top:1px solid #e0e0e0;padding-top:16px">
-        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;text-align:left">Mode test — coller un mail</div>
-        <textarea id="test-mail-input" placeholder="Colle ici le texte d'un mail SAV pour tester sans Outlook…" style="width:100%;height:120px;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;resize:vertical;color:#333;background:#fff"></textarea>
-        <input id="test-subject-input" placeholder="Objet du mail (optionnel)" style="width:100%;margin-top:5px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:'Segoe UI',Arial,sans-serif"/>
-        <button class="btn btn-secondary" style="margin-top:6px" onclick="analyzeTest()">Analyser ce texte</button>
+      <p>Ouvre un mail SAV puis clique sur Analyser.</p>
+      <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">Analyser ce mail</button>
+
+      <div class="test-zone">
+        <div class="test-label">Mode test — simuler un mail</div>
+        <input id="test-subject" placeholder="Objet du mail (optionnel)"/>
+        <textarea id="test-mail" placeholder="Colle ici le texte d'un mail SAV…"></textarea>
+
+        <div class="pj-upload-zone">
+          <div class="pj-upload-label">Pièces jointes test</div>
+          <div class="pj-upload-grid">
+            <div class="pj-slot required" id="slot-ticket">
+              <input type="file" accept="image/*,.pdf" onchange="handleUpload('ticket',this)"/>
+              <div class="pj-slot-icon">🧾</div>
+              <div class="pj-slot-name">Ticket / Facture</div>
+              <div class="pj-slot-sub">OBLIGATOIRE</div>
+              <div class="pj-badge-ok" id="badge-ticket" style="display:none">✓ Chargé</div>
+            </div>
+            <div class="pj-slot" id="slot-notice">
+              <input type="file" accept="image/*,.pdf" onchange="handleUpload('notice',this)"/>
+              <div class="pj-slot-icon">📋</div>
+              <div class="pj-slot-name">Notice annotée</div>
+              <div class="pj-slot-sub">Recommandée</div>
+              <div class="pj-badge-ok" id="badge-notice" style="display:none">✓ Chargé</div>
+            </div>
+            <div class="pj-slot" id="slot-photo">
+              <input type="file" accept="image/*" multiple onchange="handleUpload('photo',this)"/>
+              <div class="pj-slot-icon">📷</div>
+              <div class="pj-slot-name">Photos défaut</div>
+              <div class="pj-slot-sub">Si visible</div>
+              <div class="pj-badge-ok" id="badge-photo" style="display:none">✓ Chargé</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top:8px" onclick="analyzeTest()">Analyser ce texte</button>
       </div>
     </div>
 
     <!-- LOADING -->
     <div id="state-loading">
       <div class="spinner"></div>
-      <p>Analyse en cours…</p>
+      <p id="loading-msg">Analyse en cours…</p>
+      <p class="loading-sub" id="loading-sub"></p>
     </div>
 
     <!-- RESULT -->
     <div id="state-result">
-
-      <!-- Badge client + statut -->
       <div class="client-row">
         <span id="client-badge"></span>
         <span id="statut-pill"></span>
       </div>
 
-      <!-- RECAP CARD -->
-      <div class="recap-card" id="recap-card">
+      <!-- STATUT PIÈCES JOINTES -->
+      <div class="pj-status" id="pj-status-block">
+        <div class="pj-status-header">Pièces jointes</div>
+        <div id="pj-status-list"></div>
+      </div>
+
+      <!-- RECAP DOSSIER -->
+      <div class="recap-card">
         <div class="recap-header">Récapitulatif du dossier</div>
         <div class="recap-resume" id="recap-resume"></div>
         <div class="recap-grid" id="recap-grid"></div>
       </div>
 
-      <!-- QUESTIONS si incomplet -->
+      <!-- ANALYSE PHOTOS -->
+      <div class="photo-analyse" id="photo-analyse-block" style="display:none">
+        <div class="photo-analyse-label">Analyse des photos</div>
+        <div class="photo-analyse-text" id="photo-analyse-text"></div>
+      </div>
+
+      <!-- QUESTIONS / INFOS MANQUANTES -->
       <div id="questions-block" class="questions-block" style="display:none">
         <div class="questions-title">Informations manquantes</div>
         <div id="questions-list"></div>
       </div>
 
       <!-- DECISION -->
-      <div class="decision-section">
-        <div class="decision-label" style="margin-bottom:8px">Décision de traitement</div>
+      <div class="decision-section" id="decision-section" style="display:none">
+        <div class="decision-label">Décision de traitement</div>
         <div class="decision-btns">
           <button class="dbtn dbtn-sav" id="btn-sav" onclick="selectMode('sav')">
-            Envoyer une pièce
-            <span class="dbtn-sub">SAV remplacement</span>
+            Envoyer une pièce<span class="dbtn-sub">SAV remplacement</span>
           </button>
           <button class="dbtn dbtn-remb" id="btn-remb" onclick="selectMode('remb')">
-            Rembourser
-            <span class="dbtn-sub">Avoir / retour</span>
+            Rembourser<span class="dbtn-sub">Avoir / retour</span>
           </button>
         </div>
       </div>
@@ -242,7 +319,7 @@
         <div class="accord-val" id="accord-val"></div>
       </div>
 
-      <!-- APERÇU LIGNE EXCEL -->
+      <!-- APERÇU CSV -->
       <div id="csv-block" class="csv-block" style="display:none">
         <div class="csv-label">Aperçu — ligne Excel</div>
         <div class="csv-preview" id="csv-preview"></div>
@@ -256,7 +333,7 @@
         </div>
         <div id="chat-body" style="display:none">
           <div class="chat-messages" id="chat-messages">
-            <div class="msg-ai">Je connais le contexte de ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>
+            <div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse au magasin, analyser un point précis, ou poser n'importe quelle question.</div>
           </div>
           <div class="chat-input-row">
             <input type="text" id="chat-input" placeholder="Ex : rédige une relance pour ce magasin…" onkeydown="if(event.key==='Enter')sendChat()"/>
@@ -276,22 +353,27 @@
 
   </div><!-- /scroll-area -->
 
-  <!-- ACTION BAR fixe en bas -->
+  <!-- ACTION BAR -->
   <div class="action-bar" id="action-bar" style="display:none">
-    <button class="btn btn-warn" id="btn-relance" style="display:none" onclick="sendRelance()">Préparer email de relance</button>
-    <button class="btn btn-success" id="btn-valider" style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
+    <button class="btn btn-danger"   id="btn-relance-ticket" style="display:none" onclick="demanderTicket()">Demander le ticket / la facture</button>
+    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Demander les pièces jointes manquantes</button>
+    <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Demander les informations manquantes</button>
+    <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
     <div class="sep"></div>
     <button class="btn btn-secondary" onclick="resetToIdle()">Nouveau mail</button>
   </div>
 
-</div><!-- /screen-main -->
+</div>
 
 <script>
 var G = {
   data:null, client:null, mode:null,
   csvLine:null, accordNum:null,
   chatHistory:[], chatOpen:false,
-  mailBody:'', mailSubject:'', mailSender:''
+  mailBody:'', mailSubject:'', mailSender:'',
+  attachments:{ ticket:null, notice:null, photos:[] },
+  pjStatus:{ ticket:false, notice:false, photo:false },
+  pjIgnored:{ notice:false, photo:false }
 };
 
 // ── OFFICE INIT ──────────────────────────────────────────
@@ -321,12 +403,23 @@ function showMain(){
   resetToIdle();
 }
 function resetToIdle(){
-  G={data:null,client:null,mode:null,csvLine:null,accordNum:null,chatHistory:[],chatOpen:false,mailBody:'',mailSubject:'',mailSender:''};
+  G={data:null,client:null,mode:null,csvLine:null,accordNum:null,chatHistory:[],chatOpen:false,
+     mailBody:'',mailSubject:'',mailSender:'',
+     attachments:{ticket:null,notice:null,photos:[]},
+     pjStatus:{ticket:false,notice:false,photo:false},
+     pjIgnored:{notice:false,photo:false}};
   setState('idle');
   document.getElementById('action-bar').style.display='none';
   document.getElementById('chat-body').style.display='none';
   document.getElementById('chat-icon').textContent='▼';
-  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais le contexte de ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>';
+  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
+  // reset slots
+  ['ticket','notice','photo'].forEach(function(k){
+    var slot = document.getElementById('slot-'+k);
+    if(slot){ slot.classList.remove('has-file'); }
+    var badge = document.getElementById('badge-'+k);
+    if(badge){ badge.style.display='none'; }
+  });
 }
 function setState(s){
   ['idle','loading','result','error'].forEach(function(x){
@@ -334,66 +427,159 @@ function setState(s){
   });
 }
 
-// ── ANALYSE EMAIL ────────────────────────────────────────
+// ── GESTION UPLOADS TEST ─────────────────────────────────
+function handleUpload(type, input){
+  if(!input.files||!input.files.length) return;
+  var slot  = document.getElementById('slot-'+type);
+  var badge = document.getElementById('badge-'+type);
+  if(type==='photo'){
+    G.attachments.photos = [];
+    Array.from(input.files).forEach(function(f){ readFileB64(f, function(b64,mt){ G.attachments.photos.push({data:b64,mediaType:mt,name:f.name}); }); });
+  } else {
+    readFileB64(input.files[0], function(b64,mt){ G.attachments[type]={data:b64,mediaType:mt,name:input.files[0].name}; });
+  }
+  slot.classList.add('has-file');
+  badge.style.display='block';
+}
+function readFileB64(file, cb){
+  var reader = new FileReader();
+  reader.onload = function(e){ cb(e.target.result.split(',')[1], file.type||'image/jpeg'); };
+  reader.readAsDataURL(file);
+}
+
+// ── ANALYSE EMAIL (Outlook) ──────────────────────────────
 function analyzeEmail(){
   setState('loading');
+  setLoadingMsg('Lecture du mail…','');
   Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result){
-    if(result.status !== Office.AsyncResultStatus.Succeeded){ showError("Impossible de lire le mail."); return; }
-    G.mailSubject = Office.context.mailbox.item.subject || '';
-    G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress : '';
-    G.mailBody    = result.value || '';
-    runAnalysis();
+    if(result.status!==Office.AsyncResultStatus.Succeeded){ showError("Impossible de lire le mail."); return; }
+    G.mailSubject = Office.context.mailbox.item.subject||'';
+    G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress:'';
+    G.mailBody    = result.value||'';
+    // Lire les PJ depuis Outlook
+    var item = Office.context.mailbox.item;
+    if(item.attachments && item.attachments.length>0){
+      setLoadingMsg('Lecture des pièces jointes…','');
+      loadOutlookAttachments(item.attachments, function(){
+        runAnalysis();
+      });
+    } else {
+      runAnalysis();
+    }
   });
 }
 
-// ── MODE TEST (navigateur sans Outlook) ─────────────────
+function loadOutlookAttachments(attachments, cb){
+  var pending = 0;
+  attachments.forEach(function(att){
+    if(att.isInline) return;
+    var name = (att.name||'').toLowerCase();
+    var isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/.test(name);
+    var isPdf   = /\.pdf$/.test(name);
+    if(!isImage && !isPdf) return;
+    pending++;
+    Office.context.mailbox.item.getAttachmentContentAsync(att.id, function(res){
+      if(res.status===Office.AsyncResultStatus.Succeeded){
+        var content = res.value;
+        var b64  = content.content;
+        var mime = isImage ? 'image/jpeg' : 'application/pdf';
+        // Classer par nom
+        if(name.match(/ticket|facture|recu|receipt/i)){
+          G.attachments.ticket = {data:b64, mediaType:mime, name:att.name};
+        } else if(name.match(/notice|schema|plan/i)){
+          G.attachments.notice = {data:b64, mediaType:mime, name:att.name};
+        } else if(isImage){
+          G.attachments.photos.push({data:b64, mediaType:mime, name:att.name});
+        }
+      }
+      pending--;
+      if(pending===0) cb();
+    });
+  });
+  if(pending===0) cb();
+}
+
+// ── ANALYSE TEST (navigateur) ────────────────────────────
 function analyzeTest(){
-  var body    = document.getElementById('test-mail-input').value.trim();
-  var subject = document.getElementById('test-subject-input').value.trim();
+  var body    = document.getElementById('test-mail').value.trim();
+  var subject = document.getElementById('test-subject').value.trim();
   if(!body){ alert('Colle le texte d\'un mail dans la zone de test.'); return; }
   G.mailBody    = body;
-  G.mailSubject = subject || '(objet non précisé)';
+  G.mailSubject = subject||'(objet non précisé)';
   G.mailSender  = 'test@simulation.fr';
   setState('loading');
+  setLoadingMsg('Analyse en cours…','');
   runAnalysis();
+}
+
+function setLoadingMsg(msg, sub){
+  document.getElementById('loading-msg').textContent  = msg;
+  document.getElementById('loading-sub').textContent  = sub||'';
 }
 
 // ── ANALYSE COMMUNE ──────────────────────────────────────
 function runAnalysis(){
-    var prompt =
-      "Tu es un assistant SAV. Analyse cet email et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
-      "Email :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
-      "JSON attendu (toutes les clés obligatoires) :\n" +
-      "{\n" +
+  setLoadingMsg('Analyse du mail…', 'Extraction des informations');
+
+  // Détecter PJ présentes
+  G.pjStatus.ticket = !!G.attachments.ticket;
+  G.pjStatus.notice = !!G.attachments.notice;
+  G.pjStatus.photo  = G.attachments.photos.length>0;
+
+  // Construire messages pour l'API (texte + images)
+  var contentParts = [];
+
+  // Texte du mail
+  contentParts.push({
+    type:'text',
+    text: "Tu es un assistant SAV expert.\n\n" +
+      "Analyse ce mail et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
+      "Mail :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
+      (G.pjStatus.photo ? "Des photos sont jointes — décris ce que tu observes dans 'analyse_photos'.\n\n" : "") +
+      "JSON attendu :\n{\n" +
       "  \"client\": \"su\" ou \"its\",\n" +
-      "  \"nom_enseigne\": \"nom complet du magasin\",\n" +
+      "  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" (si SU) — ou nom magasin (si ITS),\n" +
       "  \"departement_ville\": \"ex: 75 PARIS\",\n" +
       "  \"ref_produit\": \"référence produit ou null\",\n" +
-      "  \"ean\": \"code EAN 13 chiffres ou null\",\n" +
-      "  \"designation_piece\": \"description précise de la pièce ou du problème\",\n" +
-      "  \"numero_cnb\": \"numéro CNB ou null\",\n" +
-      "  \"quantite\": \"quantité concernée, '1' par défaut\",\n" +
+      "  \"ean\": \"code EAN ou null\",\n" +
+      "  \"designation_piece\": \"description COURTE et synthétique max 8 mots, ex: Fermeture éclair panneau avant x1\",\n" +
+      "  \"numero_dossier\": \"numéro de dossier du mail (CNB) ou null\",\n" +
+      "  \"quantite\": \"quantité, '1' par défaut\",\n" +
       "  \"mois_mail\": \"format MM/YYYY\",\n" +
-      "  \"date_reception\": \"date du mail format DD/MM/YYYY\",\n" +
+      "  \"date_reception\": \"date du mail DD/MM/YYYY\",\n" +
       "  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",\n" +
-      "  \"questions\": [\"liste des infos manquantes à demander\"],\n" +
+      "  \"questions\": [\"infos manquantes à demander\"],\n" +
       "  \"resume\": \"1 phrase claire résumant le problème et la demande\",\n" +
       "  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",\n" +
-      "  \"raison_suggestion\": \"courte explication du pourquoi de la suggestion\"\n" +
-      "}";
+      "  \"raison_suggestion\": \"courte justification\",\n" +
+      "  \"analyse_photos\": \"description de ce qui est visible sur les photos, ou null\",\n" +
+      "  \"defaut_visible\": true ou false\n" +
+      "}"
+  });
 
-    callClaude(prompt, function(json){
-      try{
-        var d = JSON.parse(json.replace(/```json|```/g,'').trim());
-        G.data   = d;
-        G.client = d.client;
-        G.chatHistory = [
-          {role:'user',    content:'Voici le mail SAV à traiter :\n'+G.mailBody},
-          {role:'assistant',content:'J\'ai analysé ce dossier. '+d.resume+' Je suis prêt à t\'aider.'}
-        ];
-        renderResult(d);
-      }catch(e){ showError("Erreur de décodage IA. Réessaye."); }
-    });
+  // Ajouter les images si présentes
+  if(G.attachments.ticket && G.attachments.ticket.mediaType.startsWith('image')){
+    contentParts.push({type:'image',source:{type:'base64',media_type:G.attachments.ticket.mediaType,data:G.attachments.ticket.data}});
+  }
+  if(G.attachments.notice && G.attachments.notice.mediaType.startsWith('image')){
+    contentParts.push({type:'image',source:{type:'base64',media_type:G.attachments.notice.mediaType,data:G.attachments.notice.data}});
+  }
+  G.attachments.photos.forEach(function(p){
+    contentParts.push({type:'image',source:{type:'base64',media_type:p.mediaType,data:p.data}});
+  });
+
+  callClaudeRaw([{role:'user',content:contentParts}], 1200, function(json){
+    try{
+      var d = JSON.parse(json.replace(/```json|```/g,'').trim());
+      G.data   = d;
+      G.client = d.client;
+      G.chatHistory = [
+        {role:'user',    content:'Mail SAV à traiter :\n'+G.mailBody+(d.analyse_photos?'\n\nPhotos : '+d.analyse_photos:'')},
+        {role:'assistant',content:'J\'ai analysé ce dossier. '+d.resume}
+      ];
+      renderResult(d);
+    }catch(e){ showError("Erreur de décodage IA. Réessaye."); }
+  });
 }
 
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
@@ -404,45 +590,45 @@ function renderResult(d){
   var badge = document.getElementById('client-badge');
   if(d.client==='su')       badge.innerHTML='<span class="client-badge badge-u">Système U</span>';
   else if(d.client==='its') badge.innerHTML='<span class="client-badge badge-its">Intersport</span>';
-  else                       badge.innerHTML='<span class="client-badge badge-unknown">Client non détecté</span>';
+  else                       badge.innerHTML='<span class="client-badge badge-unknown">Client ?</span>';
 
   // Statut pill
   var sp = document.getElementById('statut-pill');
-  var pillMap = {complet:'pill-ok',incomplet:'pill-warn',ambigu:'pill-warn'};
-  var pillTxt = {complet:'Complet',incomplet:'Incomplet',ambigu:'Ambigu'};
-  sp.innerHTML = '<span class="statut-pill '+(pillMap[d.statut]||'pill-warn')+'">'+(pillTxt[d.statut]||d.statut)+'</span>';
+  var pm = {complet:'pill-ok',incomplet:'pill-warn',ambigu:'pill-warn'};
+  var pt = {complet:'Complet',incomplet:'Incomplet',ambigu:'Ambigu'};
+  sp.innerHTML='<span class="statut-pill '+(pm[d.statut]||'pill-warn')+'">'+(pt[d.statut]||d.statut)+'</span>';
+
+  // STATUT PIÈCES JOINTES
+  renderPJStatus(d);
 
   // Résumé
-  document.getElementById('recap-resume').textContent = d.resume || '';
+  document.getElementById('recap-resume').textContent = d.resume||'';
 
   // Grille récap
   var items = [
-    {label:'Magasin',       val:d.nom_enseigne,      full:false},
-    {label:'Département',   val:d.departement_ville, full:false},
-    {label:'Réf. produit',  val:d.ref_produit,       full:false},
-    {label:'EAN',           val:d.ean,               full:false},
-    {label:'Pièce / problème', val:d.designation_piece, full:true},
-    {label:'N° CNB',        val:d.numero_cnb,        full:false},
-    {label:'Quantité',      val:d.quantite,          full:false},
-    {label:'Date réception',val:d.date_reception,    full:false},
+    {label:'Enseigne',          val:d.nom_enseigne,       full:false},
+    {label:'Département / ville', val:d.departement_ville, full:false},
+    {label:'Réf. produit',      val:d.ref_produit,        full:false},
+    {label:'EAN',               val:d.ean,                full:false},
+    {label:'Pièce / problème',  val:d.designation_piece,  full:true},
+    {label:'N° de dossier',     val:d.numero_dossier,     full:false},
+    {label:'Quantité',          val:d.quantite,           full:false},
+    {label:'Date réception',    val:d.date_reception,     full:false},
+    {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true}
   ];
-
-  // Suggestion traitement
-  var suggTxt = '';
-  if(d.suggestion_traitement==='sav')           suggTxt = 'Envoi pièce — '+d.raison_suggestion;
-  else if(d.suggestion_traitement==='remboursement') suggTxt = 'Remboursement — '+d.raison_suggestion;
-  else                                           suggTxt = 'À déterminer — '+d.raison_suggestion;
-  items.push({label:'Suggestion IA', val:suggTxt, full:true, suggest:true});
-
-  var grid = document.getElementById('recap-grid');
-  grid.innerHTML = items.map(function(item){
-    var cls = item.full ? 'recap-item-full' : 'recap-item';
-    var valCls = !item.val ? 'missing' : (item.suggest ? 'suggest' : '');
-    return '<div class="'+cls+'">'+
-      '<div class="ri-label">'+item.label+'</div>'+
-      '<div class="ri-val '+valCls+'">'+(item.val||'—')+'</div>'+
-      '</div>';
+  document.getElementById('recap-grid').innerHTML = items.map(function(item){
+    var cls = item.full ? 'recap-item-full':'recap-item';
+    var vc  = !item.val ? 'missing':(item.suggest?'suggest':'');
+    return '<div class="'+cls+'"><div class="ri-label">'+item.label+'</div><div class="ri-val '+vc+'">'+(item.val||'—')+'</div></div>';
   }).join('');
+
+  // Analyse photos
+  if(d.analyse_photos){
+    document.getElementById('photo-analyse-block').style.display='block';
+    document.getElementById('photo-analyse-text').textContent = d.analyse_photos;
+  } else {
+    document.getElementById('photo-analyse-block').style.display='none';
+  }
 
   // Questions
   var qb = document.getElementById('questions-block');
@@ -453,14 +639,89 @@ function renderResult(d){
     }).join('');
   } else { qb.style.display='none'; }
 
-  // Pré-sélection suggestion
+  // Boutons décision — masqués si ticket absent
+  var decisionSection = document.getElementById('decision-section');
+  decisionSection.style.display = G.pjStatus.ticket ? 'block':'none';
+
+  // Pré-sélection
   if(d.suggestion_traitement==='sav')           selectMode('sav');
   else if(d.suggestion_traitement==='remboursement') selectMode('remb');
 
   // Action bar
+  renderActionBar();
+}
+
+// ── STATUT PIÈCES JOINTES ────────────────────────────────
+function renderPJStatus(d){
+  var list = document.getElementById('pj-status-list');
+  var html = '';
+
+  // Ticket
+  if(G.pjStatus.ticket){
+    html += pjItem('ok', 'Ticket / Facture', G.attachments.ticket.name, false, false);
+  } else {
+    html += pjItem('error', 'Ticket / Facture manquant', 'Obligatoire — impossible de traiter sans', true, false);
+  }
+
+  // Notice
+  if(G.pjStatus.notice){
+    html += pjItem('ok', 'Notice annotée', G.attachments.notice.name, false, false);
+  } else if(!G.pjIgnored.notice){
+    html += pjItem('warn', 'Notice annotée absente', 'Recommandée avec pièces et quantités', false, 'notice');
+  } else {
+    html += pjItem('warn', 'Notice annotée', 'Ignorée', false, false);
+  }
+
+  // Photos
+  var defautVisible = d && d.defaut_visible;
+  if(G.pjStatus.photo){
+    html += pjItem('ok', 'Photos ('+G.attachments.photos.length+')', 'Analysées par IA', false, false);
+  } else if(defautVisible && !G.pjIgnored.photo){
+    html += pjItem('warn', 'Photos absentes', 'Défaut visible mentionné — photos recommandées', false, 'photo');
+  } else if(!defautVisible){
+    html += pjItem('ok', 'Photos', 'Non requises (pas de défaut visible)', false, false);
+  } else {
+    html += pjItem('warn', 'Photos', 'Ignorées', false, false);
+  }
+
+  list.innerHTML = html;
+}
+
+function pjItem(status, label, sub, isError, ignoreKey){
+  var dotClass = status==='ok'?'pj-dot-ok':status==='warn'?'pj-dot-warn':'pj-dot-error';
+  var actions = '';
+  if(isError){
+    // rien — bloquant
+  } else if(ignoreKey){
+    actions = '<button class="pj-item-action" onclick="ignorerPJ(\''+ignoreKey+'\')">Ignorer</button>';
+  }
+  return '<div class="pj-item">'+
+    '<span class="pj-dot '+dotClass+'"></span>'+
+    '<span class="pj-item-label"><strong style="font-weight:500">'+label+'</strong><br><span style="font-size:11px;color:#888">'+sub+'</span></span>'+
+    actions+
+    '</div>';
+}
+
+function ignorerPJ(key){
+  G.pjIgnored[key] = true;
+  renderPJStatus(G.data);
+  renderActionBar();
+}
+
+// ── ACTION BAR ───────────────────────────────────────────
+function renderActionBar(){
   document.getElementById('action-bar').style.display='flex';
-  document.getElementById('btn-relance').style.display = (d.statut!=='complet') ? 'block':'none';
-  document.getElementById('btn-valider').style.display = 'block';
+
+  var ticketOk  = G.pjStatus.ticket;
+  var noticeOk  = G.pjStatus.notice || G.pjIgnored.notice;
+  var photoOk   = G.pjStatus.photo  || G.pjIgnored.photo || (G.data && !G.data.defaut_visible);
+  var infoOk    = !G.data || !G.data.questions || G.data.questions.length===0;
+  var modeOk    = !!G.mode;
+
+  document.getElementById('btn-relance-ticket').style.display = !ticketOk                    ? 'block':'none';
+  document.getElementById('btn-relance-pj').style.display     = ticketOk && (!noticeOk||!photoOk) && !(G.pjIgnored.notice&&G.pjIgnored.photo) ? 'block':'none';
+  document.getElementById('btn-relance-info').style.display   = ticketOk && !infoOk          ? 'block':'none';
+  document.getElementById('btn-valider').style.display        = ticketOk && modeOk           ? 'block':'none';
 }
 
 // ── SÉLECTION MODE ───────────────────────────────────────
@@ -469,125 +730,115 @@ function selectMode(mode){
   document.getElementById('btn-sav').classList.toggle('active',  mode==='sav');
   document.getElementById('btn-remb').classList.toggle('active', mode==='remb');
   if(!G.data) return;
-
   document.getElementById('accord-block').style.display='none';
   document.getElementById('form-section').style.display='flex';
-
   var d = G.data;
   if     (mode==='sav'  && d.client==='su')  renderFormSAV_SU(d);
   else if(mode==='sav'  && d.client==='its') renderFormSAV_ITS(d);
   else if(mode==='remb' && d.client==='su')  renderFormRemb_SU(d);
   else if(mode==='remb' && d.client==='its') renderFormRemb_ITS(d);
-
   updateCSV();
+  renderActionBar();
 }
 
 // ── HELPERS FORMULAIRE ───────────────────────────────────
 function fi(label, id, val, editable, type){
   var v = val||'';
-  var miss = !v ? ' missing':'';
+  var miss = !v;
   if(!editable){
-    return '<div class="field-group"><div class="fl">'+label+'</div><div class="fv'+(miss)+'">'+(v||'—')+'</div></div>';
+    return '<div class="field-group"><div class="fl">'+label+'</div><div class="fv'+(miss?' missing':'')+'">'+(v||'—')+'</div></div>';
+  }
+  if(type==='enseigne-su'){
+    var opts=['SUPER U','HYPER U','U EXPRESS'];
+    return '<div class="field-group'+(miss?' required-field':'')+'"><div class="fl">'+label+(miss?' *':'')+'</div>'+
+      '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
+      '<option value="">-- Choisir --</option>'+
+      opts.map(function(o){return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>';}).join('')+
+      '</select></div>';
   }
   if(type==='transporteur'){
-    return '<div class="field-group highlight"><div class="fl">'+label+' *</div>'+
+    return '<div class="field-group required-field"><div class="fl">'+label+' *</div>'+
       '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
-      '<option value="">— Choisir —</option>'+
+      '<option value="">-- Choisir --</option>'+
       '<option value="DPD"'+(v==='DPD'?' selected':'')+'>DPD</option>'+
       '<option value="SCH"'+(v==='SCH'?' selected':'')+'>Schenker</option>'+
       '</select></div>';
   }
   if(type==='etat'){
-    var opts=['AVOIR','ECHANGE','REMPLACEMENT ACCESSOIRE','RETOUR EN L\'ETAT','REPARE'];
+    var opts2=['AVOIR','ECHANGE','REMPLACEMENT ACCESSOIRE','RETOUR EN L\'ETAT','REPARE'];
     return '<div class="field-group"><div class="fl">'+label+'</div>'+
       '<select class="fi" id="'+id+'" onchange="updateCSV()">'+
-      opts.map(function(o){ return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>'; }).join('')+
+      opts2.map(function(o){return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>';}).join('')+
       '</select></div>';
   }
-  return '<div class="field-group'+(miss?' highlight':'')+'" ><div class="fl">'+label+(miss?' *':'')+' </div>'+
+  return '<div class="field-group'+(miss?' required-field':'')+'"><div class="fl">'+label+(miss?' *':'')+'</div>'+
     '<input class="fi'+(miss?' missing':'')+'" id="'+id+'" value="'+v+'" placeholder="'+(miss?'À remplir':'')+'" oninput="updateCSV()"/></div>';
 }
 
-// ── FORMULAIRES ──────────────────────────────────────────
-// Colonnes vérifiées sur le fichier Excel réel
-
+// ── FORMULAIRES (colonnes vérifiées sur fichier Excel réel) ─
 function renderFormSAV_SU(d){
-  // Ordre : Date réception | Date expédition | Référence produit | Désignation pièces |
-  //         Nom enseigne | Département et ville | Tracking | Numéro CNB | Livraison (ajoutée)
+  // Date réception | Date expédition | Référence produit | Désignation pièces |
+  // Nom enseigne | Département et ville | Tracking | Numéro de dossier | Livraison
+  // Champs post-traitement (date expé, tracking) supprimés de l'interface
   document.getElementById('form-section').innerHTML =
-    '<div class="form-title">Système U — SAV · Champs à compléter</div>'+
-    fi('Date de réception',   'f_date_recep',  d.date_reception,    false)+
-    fi('Référence produit',   'f_ref',         d.ref_produit,       true)+
-    fi('Désignation pièce(s)','f_designation', d.designation_piece, true)+
-    fi('Nom de l\'enseigne',  'f_enseigne',    d.nom_enseigne,      true)+
-    fi('Département et ville','f_depville',    d.departement_ville, true)+
-    fi('Numéro CNB',          'f_cnb',         d.numero_cnb,        true)+
-    fi('Date d\'expédition',  'f_date_expe',   '',                  true)+
-    fi('Tracking',            'f_tracking',    '',                  true)+
-    fi('Livraison',           'f_livraison',   '',                  true, 'transporteur');
+    '<div class="form-title">Système U — SAV</div>'+
+    fi('Date de réception',    'f_date_recep',  d.date_reception,    false)+
+    fi('Référence produit',    'f_ref',         d.ref_produit,       true)+
+    fi('Désignation pièce(s)', 'f_designation', d.designation_piece, true)+
+    fi('Enseigne',             'f_enseigne',    d.nom_enseigne,      true, 'enseigne-su')+
+    fi('Département et ville', 'f_depville',    d.departement_ville, true)+
+    fi('N° de dossier',        'f_cnb',         d.numero_dossier,    true)+
+    fi('Livraison',            'f_livraison',   '',                  true, 'transporteur');
 }
 
 function renderFormSAV_ITS(d){
-  // Ordre : Date | Référence | Numéro de lot | Pannes | Magasin | Commentaires |
-  //         Date réception produit | Date expédition | État produit | Tracking | Livraison (ajoutée)
+  // Date | Référence | Numéro de lot | Pannes | Magasin | Commentaires |
+  // Date réception produit | Date expédition | État produit | Tracking | Livraison
+  // Champs post-traitement supprimés
   document.getElementById('form-section').innerHTML =
-    '<div class="form-title">Intersport — SAV · Champs à compléter</div>'+
-    fi('Date',                     'f_date_recep',      d.date_reception,    false)+
-    fi('Référence',                'f_ref',             d.ref_produit,       true)+
-    fi('Pannes / problème',        'f_pannes',          d.designation_piece, true)+
-    fi('Magasin',                  'f_enseigne',        d.nom_enseigne,      true)+
-    fi('Numéro de lot',            'f_lot',             '',                  true)+
-    fi('Commentaires',             'f_commentaires',    '',                  true)+
-    fi('Date réception produit',   'f_date_recep_prod', '',                  true)+
-    fi('Date expédition',          'f_date_expe',       '',                  true)+
-    fi('État produit après SAV',   'f_etat',            'AVOIR',             true, 'etat')+
-    fi('Tracking',                 'f_tracking',        '',                  true)+
-    fi('Livraison',                'f_livraison',       '',                  true, 'transporteur');
+    '<div class="form-title">Intersport — SAV</div>'+
+    fi('Date',                 'f_date_recep',  d.date_reception,    false)+
+    fi('Référence',            'f_ref',         d.ref_produit,       true)+
+    fi('Pannes / problème',    'f_pannes',      d.designation_piece, true)+
+    fi('Magasin',              'f_enseigne',    d.nom_enseigne,      true)+
+    fi('Livraison',            'f_livraison',   '',                  true, 'transporteur');
 }
 
 function renderFormRemb_SU(d){
-  // Ordre : Date réception | Réception facture | REF. | EAN | Qté |
-  //         Nom enseigne | Département et ville | Commentaire | Numéro CNB |
-  //         Numéro d'accord | Numéro Wisen | DDP/FOB
+  // Date réception | Réception facture | REF. | EAN | Qté |
+  // Nom enseigne | Département et ville | Commentaire | N° dossier |
+  // N° accord | N° Wisen | DDP/FOB
   var accord = genAccord('su');
   G.accordNum = accord;
   document.getElementById('accord-block').style.display='flex';
   document.getElementById('accord-val').textContent = accord;
   document.getElementById('form-section').innerHTML =
-    '<div class="form-title">Système U — Remboursement · Champs à compléter</div>'+
-    fi('Date de réception',    'f_date_recep',   d.date_reception,    false)+
-    fi('Réception de la facture','f_date_facture','',                  true)+
-    fi('Référence (REF.)',      'f_ref',          d.ref_produit,       true)+
-    fi('EAN',                  'f_ean',           d.ean,               true)+
-    fi('Quantité',             'f_qte',           d.quantite||'1',     true)+
-    fi('Nom de l\'enseigne',   'f_enseigne',      d.nom_enseigne,      true)+
-    fi('Département et ville', 'f_depville',      d.departement_ville, true)+
-    fi('Commentaire',          'f_commentaire',   '',                  true)+
-    fi('Numéro CNB',           'f_cnb',           d.numero_cnb,        true)+
-    fi('Numéro d\'accord',     'f_accord',        accord,              false)+
-    fi('Numéro Wisen',         'f_wisen',         '',                  true)+
-    fi('DDP / FOB',            'f_ddp',           '',                  true);
+    '<div class="form-title">Système U — Remboursement</div>'+
+    fi('Date de réception',    'f_date_recep',  d.date_reception,    false)+
+    fi('Référence (REF.)',     'f_ref',         d.ref_produit,       true)+
+    fi('EAN',                  'f_ean',         d.ean,               true)+
+    fi('Quantité',             'f_qte',         d.quantite||'1',     true)+
+    fi('Enseigne',             'f_enseigne',    d.nom_enseigne,      true, 'enseigne-su')+
+    fi('Département et ville', 'f_depville',    d.departement_ville, true)+
+    fi('N° de dossier',        'f_cnb',         d.numero_dossier,    true)+
+    fi('N° d\'accord',         'f_accord',      accord,              false);
 }
 
 function renderFormRemb_ITS(d){
-  // Ordre : Mois | Date de réception | Prix | Code article | EAN | REF. |
-  //         Département et ville | Code sociétaire | N° d'accord | N° Wisen
+  // Mois | Date réception | Prix | Code article | EAN | REF. |
+  // Département et ville | Code sociétaire | N° accord | N° Wisen
   var accord = genAccord('its');
   G.accordNum = accord;
   document.getElementById('accord-block').style.display='flex';
   document.getElementById('accord-val').textContent = accord;
   document.getElementById('form-section').innerHTML =
-    '<div class="form-title">Intersport — Remboursement · Champs à compléter</div>'+
-    fi('Mois',                 'f_mois',         d.mois_mail,         true)+
-    fi('Date de réception',    'f_date_recep',   d.date_reception,    false)+
-    fi('Prix',                 'f_prix',         '',                  true)+
-    fi('Code article',         'f_code_article', '',                  true)+
-    fi('EAN',                  'f_ean',          d.ean,               true)+
-    fi('Référence (REF.)',     'f_ref',          d.ref_produit,       true)+
-    fi('Département et ville', 'f_depville',     d.departement_ville, true)+
-    fi('Code sociétaire',      'f_code_soc',     '',                  true)+
-    fi('N° d\'accord',         'f_accord',       accord,              false)+
-    fi('N° Wisen',             'f_wisen',        '',                  true);
+    '<div class="form-title">Intersport — Remboursement</div>'+
+    fi('Mois',                 'f_mois',        d.mois_mail,         true)+
+    fi('Date de réception',    'f_date_recep',  d.date_reception,    false)+
+    fi('EAN',                  'f_ean',         d.ean,               true)+
+    fi('Référence (REF.)',     'f_ref',         d.ref_produit,       true)+
+    fi('Département et ville', 'f_depville',    d.departement_ville, true)+
+    fi('N° d\'accord',         'f_accord',      accord,              false);
 }
 
 // ── NUMÉRO D'ACCORD ──────────────────────────────────────
@@ -595,48 +846,38 @@ function genAccord(client){
   var now = new Date();
   var yy  = String(now.getFullYear()).slice(2);
   var mm  = String(now.getMonth()+1).padStart(2,'0');
-  var key = client==='su' ? 'next_su' : 'next_its';
+  var key = client==='su'?'next_su':'next_its';
   var num = parseInt(localStorage.getItem(key)||'1');
-  var prefix = client==='su' ? 'SU' : 'ITS';
-  return prefix + yy + mm + String(num).padStart(3,'0');
+  return (client==='su'?'SU':'ITS')+yy+mm+String(num).padStart(3,'0');
 }
 function incrementAccord(client){
-  var key = client==='su' ? 'next_su' : 'next_its';
-  var num = parseInt(localStorage.getItem(key)||'1');
-  localStorage.setItem(key, String(num+1));
+  var key = client==='su'?'next_su':'next_its';
+  localStorage.setItem(key, String(parseInt(localStorage.getItem(key)||'1')+1));
 }
 
-// ── GÉNÉRATION APERÇU CSV ────────────────────────────────
-function getv(id){ var el=document.getElementById(id); return el ? el.value||'' : ''; }
+// ── CSV ──────────────────────────────────────────────────
+function getv(id){ var el=document.getElementById(id); return el?el.value||'':(id==='f_accord'&&G.accordNum?G.accordNum:''); }
 
 function updateCSV(){
   if(!G.mode||!G.data) return;
-  var d = G.data;
-  var cols = [];
-  var labels = [];
-
-  if(G.mode==='sav' && G.client==='su'){
-    labels = ['Date réception','Date expédition','Référence','Désignation pièce','Enseigne','Dép. / ville','Tracking','N° CNB','Livraison'];
-    cols   = [d.date_reception||'', getv('f_date_expe'), getv('f_ref'), getv('f_designation'), getv('f_enseigne'), getv('f_depville'), getv('f_tracking'), getv('f_cnb'), getv('f_livraison')];
-  } else if(G.mode==='sav' && G.client==='its'){
-    labels = ['Date','Référence','Pannes','Magasin','N° lot','Commentaires','Date récep. produit','Date expé.','État produit','Tracking','Livraison'];
-    cols   = [d.date_reception||'', getv('f_ref'), getv('f_pannes'), getv('f_enseigne'), getv('f_lot'), getv('f_commentaires'), getv('f_date_recep_prod'), getv('f_date_expe'), getv('f_etat'), getv('f_tracking'), getv('f_livraison')];
-  } else if(G.mode==='remb' && G.client==='su'){
-    labels = ['Date récep.','Date facture','Référence','EAN','Qté','Enseigne','Dép. / ville','Commentaire','N° CNB','N° accord','N° Wisen','DDP/FOB'];
-    cols   = [d.date_reception||'', getv('f_date_facture'), getv('f_ref'), getv('f_ean'), getv('f_qte'), getv('f_enseigne'), getv('f_depville'), getv('f_commentaire'), getv('f_cnb'), G.accordNum||'', getv('f_wisen'), getv('f_ddp')];
-  } else if(G.mode==='remb' && G.client==='its'){
-    labels = ['Mois','Date récep.','Prix','Code article','EAN','Référence','Dép. / ville','Code soc.','N° accord','N° Wisen'];
-    cols   = [getv('f_mois'), d.date_reception||'', getv('f_prix'), getv('f_code_article'), getv('f_ean'), getv('f_ref'), getv('f_depville'), getv('f_code_soc'), G.accordNum||'', getv('f_wisen')];
+  var d=G.data, cols=[], labels=[];
+  if(G.mode==='sav'&&G.client==='su'){
+    labels=['Date récep.','Réf.','Désignation','Enseigne','Dép./ville','N° dossier','Livraison'];
+    cols=[d.date_reception||'',getv('f_ref'),getv('f_designation'),getv('f_enseigne'),getv('f_depville'),getv('f_cnb'),getv('f_livraison')];
+  } else if(G.mode==='sav'&&G.client==='its'){
+    labels=['Date','Réf.','Pannes','Magasin','Livraison'];
+    cols=[d.date_reception||'',getv('f_ref'),getv('f_pannes'),getv('f_enseigne'),getv('f_livraison')];
+  } else if(G.mode==='remb'&&G.client==='su'){
+    labels=['Date récep.','Réf.','EAN','Qté','Enseigne','Dép./ville','N° dossier','N° accord'];
+    cols=[d.date_reception||'',getv('f_ref'),getv('f_ean'),getv('f_qte'),getv('f_enseigne'),getv('f_depville'),getv('f_cnb'),G.accordNum||''];
+  } else if(G.mode==='remb'&&G.client==='its'){
+    labels=['Mois','Date récep.','EAN','Réf.','Dép./ville','N° accord'];
+    cols=[getv('f_mois'),d.date_reception||'',getv('f_ean'),getv('f_ref'),getv('f_depville'),G.accordNum||''];
   }
-
-  G.csvLine = cols.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join('\t');
-
+  G.csvLine = cols.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join('\t');
   var preview = document.getElementById('csv-preview');
   preview.innerHTML = cols.map(function(v,i){
-    return '<div class="csv-row">'+
-      '<span class="csv-col-name">'+(labels[i]||'')+'</span>'+
-      '<span class="csv-col-val'+(v?'':' empty')+'">'+(v||'vide')+'</span>'+
-      '</div>';
+    return '<div class="csv-row"><span class="csv-col-name">'+(labels[i]||'')+'</span><span class="csv-col-val'+(v?'':' empty')+'">'+(v||'vide')+'</span></div>';
   }).join('');
   document.getElementById('csv-block').style.display='block';
 }
@@ -648,95 +889,120 @@ function validerDossier(){
   navigator.clipboard.writeText(G.csvLine).then(function(){
     if(G.mode==='remb') incrementAccord(G.client);
     var btn = document.getElementById('btn-valider');
-    btn.textContent = 'Ligne copiée — colle dans Excel (Ctrl+V)';
-    btn.className = 'btn btn-secondary';
-    btn.disabled = true;
+    btn.textContent='Ligne copiée — colle dans Excel (Ctrl+V)';
+    btn.className='btn btn-secondary';
+    btn.disabled=true;
   }).catch(function(){
-    alert('Copie automatique indisponible. Copie le texte manuellement depuis l\'aperçu.');
+    alert('Copie auto indisponible. Copie depuis l\'aperçu manuellement.');
   });
 }
 
-// ── RELANCE ──────────────────────────────────────────────
+// ── RELANCES ─────────────────────────────────────────────
+function demanderTicket(){
+  var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Cependant, le traitement de votre dossier nécessite obligatoirement la transmission du ticket de caisse ou de la facture d'achat.\n\nMerci de nous le faire parvenir dès que possible afin que nous puissions traiter votre demande.\n\nCordialement,\nService SAV";
+  openReply(corps);
+}
+function demanderPJ(){
+  var manquantes = [];
+  if(!G.pjStatus.notice && !G.pjIgnored.notice) manquantes.push("la notice annotée avec les pièces concernées et les quantités entourées");
+  if(!G.pjStatus.photo  && !G.pjIgnored.photo && G.data && G.data.defaut_visible) manquantes.push("des photos du défaut constaté");
+  var corps = "Bonjour,\n\nNous traitons votre dossier de SAV. Pour le compléter, merci de nous transmettre :\n\n"+
+    manquantes.map(function(m){return "— "+m;}).join("\n")+
+    "\n\nMerci de votre coopération.\n\nCordialement,\nService SAV";
+  openReply(corps);
+}
 function sendRelance(){
   if(!G.data||!G.data.questions) return;
   var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV. Afin de traiter votre dossier, nous avons besoin des informations complémentaires suivantes :\n\n"+
-    G.data.questions.map(function(q){ return "— "+q; }).join("\n")+
-    "\n\nMerci de nous revenir dès que possible.\n\nCordialement,\nService SAV";
-  Office.context.mailbox.item.displayReplyAllForm({ htmlBody: corps.replace(/\n/g,'<br>') });
+    G.data.questions.map(function(q){return "— "+q;}).join("\n")+
+    "\n\nMerci de votre retour.\n\nCordialement,\nService SAV";
+  openReply(corps);
+}
+function openReply(corps){
+  try{
+    Office.context.mailbox.item.displayReplyAllForm({htmlBody:corps.replace(/\n/g,'<br>')});
+  } catch(e){
+    alert("Email préparé :\n\n"+corps);
+  }
 }
 
 // ── CHAT ─────────────────────────────────────────────────
 function toggleChat(){
-  G.chatOpen = !G.chatOpen;
-  document.getElementById('chat-body').style.display = G.chatOpen ? 'block':'none';
-  document.getElementById('chat-icon').textContent   = G.chatOpen ? '▲':'▼';
+  G.chatOpen=!G.chatOpen;
+  document.getElementById('chat-body').style.display=G.chatOpen?'block':'none';
+  document.getElementById('chat-icon').textContent=G.chatOpen?'▲':'▼';
 }
 function sendChat(){
   var input = document.getElementById('chat-input');
   var msg   = input.value.trim();
   if(!msg) return;
   input.value='';
-
-  var msgs    = document.getElementById('chat-messages');
-  var uDiv    = document.createElement('div');
-  uDiv.className = 'msg-user';
-  uDiv.textContent = msg;
+  var msgs = document.getElementById('chat-messages');
+  var uDiv = document.createElement('div');
+  uDiv.className='msg-user'; uDiv.textContent=msg;
   msgs.appendChild(uDiv);
-
   var loadDiv = document.createElement('div');
-  loadDiv.className = 'chat-loading';
-  loadDiv.textContent = 'Claude réfléchit…';
+  loadDiv.className='chat-loading'; loadDiv.textContent='Claude réfléchit…';
   msgs.appendChild(loadDiv);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
+  G.chatHistory.push({role:'user',content:msg});
 
-  G.chatHistory.push({role:'user', content:msg});
-
-  var sys = "Tu es un assistant SAV expert. Contexte du dossier : client="+
-    (G.client==='su'?'Système U':'Intersport')+
+  var sys = "Tu es un assistant SAV expert. Contexte : client="+(G.client==='su'?'Système U':'Intersport')+
     ", statut="+((G.data&&G.data.statut)||'?')+
-    ", traitement choisi="+((G.mode==='sav'?'envoi pièce':G.mode==='remb'?'remboursement':'non choisi'))+
-    ". Sois concis et pratique.";
+    ", traitement="+(G.mode==='sav'?'envoi pièce':G.mode==='remb'?'remboursement':'non choisi')+".\n\n"+
+    "Quand tu rédiges un email ou une réponse à envoyer au magasin :\n"+
+    "- Commence par 'Bonjour,' sur sa propre ligne\n"+
+    "- Corps structuré avec paragraphes clairs\n"+
+    "- Termine par 'Cordialement,\\nService SAV'\n"+
+    "- Utilise des tirets pour les listes\n\n"+
+    "Pour les réponses courtes et analyses : sois concis et direct.";
 
   callClaudeChat(sys, G.chatHistory, function(reply){
-    loadDiv.className   = 'msg-ai';
-    loadDiv.textContent = reply;
-    G.chatHistory.push({role:'assistant', content:reply});
-    msgs.scrollTop = msgs.scrollHeight;
+    loadDiv.className='msg-ai';
+    loadDiv.innerHTML = formatChatReply(reply);
+    G.chatHistory.push({role:'assistant',content:reply});
+    msgs.scrollTop=msgs.scrollHeight;
   });
 }
 
-// ── API CLAUDE ───────────────────────────────────────────
-function isOutlook(){
-  try{ return !!(window.Office && Office.context && Office.context.mailbox); }
-  catch(e){ return false; }
-}
-function apiUrl(){
-  return 'https://api.anthropic.com/v1/messages';
+function formatChatReply(text){
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<strong>$1</strong>')
+    .replace(/^— (.+)$/gm,'<li>$1</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, function(m){ return '<ul>'+m+'</ul>'; })
+    .replace(/\n\n/g,'</p><p style="margin-top:6px">')
+    .replace(/\n/g,'<br>');
 }
 
-function callClaude(prompt, cb){
+// ── API CLAUDE ───────────────────────────────────────────
+function callClaudeRaw(messages, maxTokens, cb){
   var key = localStorage.getItem('sav_api_key');
   if(!key){ showError("Clé API manquante."); return; }
   var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 20000);
-  fetch(apiUrl(),{
+  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 30000);
+  fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    signal: controller.signal,
+    signal:controller.signal,
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-  }).then(function(r){return r.json();}).then(function(data){
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens||1000,messages:messages})
+  }).then(function(r){return r.json();})
+  .then(function(data){
     clearTimeout(timeout);
     if(data.error){showError("Erreur API : "+data.error.message);return;}
     cb(data.content.map(function(b){return b.text||'';}).join(''));
-  }).catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
+  })
+  .catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
 }
 function callClaudeChat(sys, history, cb){
   var key = localStorage.getItem('sav_api_key');
   if(!key) return;
-  fetch(apiUrl(),{
+  fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:history})
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages:history})
   }).then(function(r){return r.json();}).then(function(data){
     if(!data.content) return;
     cb(data.content.map(function(b){return b.text||'';}).join(''));
