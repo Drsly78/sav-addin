@@ -448,6 +448,16 @@ function readFileB64(file, cb){
 
 // ── ANALYSE EMAIL (Outlook) ──────────────────────────────
 function analyzeEmail(){
+  // Détecter si on est dans Outlook
+  try {
+    if(!Office.context || !Office.context.mailbox || !Office.context.mailbox.item){
+      showError("Ce bouton fonctionne uniquement dans Outlook.\nUtilise la zone de test ci-dessous pour tester dans le navigateur.");
+      return;
+    }
+  } catch(e) {
+    showError("Ce bouton fonctionne uniquement dans Outlook.\nUtilise la zone de test ci-dessous pour tester dans le navigateur.");
+    return;
+  }
   setState('loading');
   setLoadingMsg('Lecture du mail…','');
   Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result){
@@ -518,69 +528,98 @@ function setLoadingMsg(msg, sub){
 
 // ── ANALYSE COMMUNE ──────────────────────────────────────
 function runAnalysis(){
-  setLoadingMsg('Analyse du mail…', 'Extraction des informations');
+  setLoadingMsg('Analyse en cours\u2026', '');
 
-  // Détecter PJ présentes
   G.pjStatus.ticket = !!G.attachments.ticket;
   G.pjStatus.notice = !!G.attachments.notice;
-  G.pjStatus.photo  = G.attachments.photos.length>0;
+  G.pjStatus.photo  = G.attachments.photos.length > 0;
 
-  // Construire messages pour l'API (texte + images)
-  var contentParts = [];
+  var allImages = [];
+  if(G.attachments.ticket) allImages.push({att:G.attachments.ticket});
+  if(G.attachments.notice) allImages.push({att:G.attachments.notice});
+  G.attachments.photos.forEach(function(p){ allImages.push({att:p}); });
+  var hasImages = allImages.length > 0;
 
-  // Texte du mail
-  contentParts.push({
-    type:'text',
-    text: "Tu es un assistant SAV expert.\n\n" +
-      "Analyse ce mail et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.\n\n" +
-      "Mail :\nExpéditeur : "+G.mailSender+"\nObjet : "+G.mailSubject+"\nCorps :\n"+G.mailBody+"\n\n" +
-      (G.pjStatus.photo ? "Des photos sont jointes. ANALYSE-LES AVEC PRECISION : décris exactement chaque élément visible (pièce concernée, type de défaut, localisation précise, état, quantité visible). Sois factuel et technique.\n\n" : "") +
-      "JSON attendu :\n{\n" +
-      "  \"client\": \"su\" ou \"its\",\n" +
-      "  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" (si SU) — ou nom magasin (si ITS),\n" +
-      "  \"departement_ville\": \"ex: 75 PARIS\",\n" +
-      "  \"ref_produit\": \"référence produit ou null\",\n" +
-      "  \"ean\": \"code EAN ou null\",\n" +
-      "  \"designation_piece\": \"description COURTE et synthétique max 8 mots, ex: Fermeture éclair panneau avant x1\",\n" +
-      "  \"numero_dossier\": \"numéro de dossier du mail (CNB) ou null\",\n" +
-      "  \"quantite\": \"quantité, '1' par défaut\",\n" +
-      "  \"mois_mail\": \"format MM/YYYY\",\n" +
-      "  \"date_reception\": \"date EXACTE du mail DD/MM/YYYY — cherche 'le', 'du', 'envoyé le', 'date:' dans l'en-tête, corps ou signature\",\n" +
-      "  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",\n" +
-      "  \"questions\": [\"infos manquantes à demander\"],\n" +
-      "  \"resume\": \"1 phrase claire résumant le problème et la demande\",\n" +
-      "  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",\n" +
-      "  \"raison_suggestion\": \"courte justification\",\n" +
-      "  \"analyse_photos\": \"description de ce qui est visible sur les photos, ou null\",\n" +
-      "  \"defaut_visible\": true ou false\n" +
-      "}"
+  var defautMatch = G.mailBody.match(/défaut|cassé|abîmé|fendu|fissuré|brisé|tordu|rayé|manquant|ne fonctionne|bloqué|coincé|déchiré/i);
+  var defautMot = defautMatch ? defautMatch[0] : '';
+
+  var lines = [
+    "Tu es un assistant SAV expert. Analyse ce mail et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.",
+    "",
+    "Mail :",
+    "Expediteur : " + G.mailSender,
+    "Objet : " + G.mailSubject,
+    "Corps :",
+    G.mailBody,
+    ""
+  ];
+
+  if(hasImages){
+    lines.push("Des pieces jointes sont presentes (" + allImages.length + " image(s)).");
+    lines.push("Pour CHAQUE image numerotee ci-dessous :");
+    lines.push("1. Identifie son type parmi : TICKET_FACTURE (ticket de caisse, facture, bon de commande, recu d'achat) / NOTICE (schema, plan, notice annotee avec pieces) / PHOTO_DEFAUT (photo du produit ou du defaut)");
+    lines.push("2. Decris precisement ce que tu vois");
+    if(defautMot){
+      lines.push("3. Pour PHOTO_DEFAUT : cherche SPECIFIQUEMENT le defaut '" + defautMot + "' mentionne dans le mail. Indique s'il est visible et ou exactement.");
+    }
+    lines.push("ticket_present doit etre true UNIQUEMENT si tu vois clairement un document d'achat (ticket caisse, facture, bon de commande).");
+    lines.push("");
+  }
+
+  lines.push("JSON attendu :");
+  lines.push("{");
+  lines.push("  \"client\": \"su\" ou \"its\",");
+  lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" si SU, sinon nom magasin,");
+  lines.push("  \"departement_ville\": \"ex: 75 PARIS\",");
+  lines.push("  \"ref_produit\": \"reference produit ou null\",");
+  lines.push("  \"ean\": \"code EAN ou null\",");
+  lines.push("  \"designation_piece\": \"description COURTE max 8 mots ex: Fermeture eclair panneau avant x1\",");
+  lines.push("  \"numero_dossier\": \"numero de dossier CNB du mail ou null\",");
+  lines.push("  \"quantite\": \"quantite, 1 par defaut\",");
+  lines.push("  \"mois_mail\": \"format MM/YYYY\",");
+  lines.push("  \"date_reception\": \"date EXACTE du mail DD/MM/YYYY — cherche dans l'en-tete, la date d'envoi, le corps ou la signature\",");
+  lines.push("  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",");
+  lines.push("  \"questions\": [\"infos manquantes\"],");
+  lines.push("  \"resume\": \"1 phrase claire resumant le probleme\",");
+  lines.push("  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",");
+  lines.push("  \"raison_suggestion\": \"courte justification\",");
+  lines.push("  \"ticket_present\": true si image ticket/facture/recu identifiee, false sinon,");
+  lines.push("  \"analyse_pj\": [{\"type\": \"TICKET_FACTURE/NOTICE/PHOTO_DEFAUT/AUTRE\", \"description\": \"ce que tu vois\"}],");
+  lines.push("  \"analyse_photos\": \"synthese des defauts visibles ou null\",");
+  lines.push("  \"defaut_visible\": true ou false");
+  lines.push("}");
+
+  var promptText = lines.join("\n");
+
+  var contentParts = [{type:'text', text:promptText}];
+  allImages.forEach(function(item, idx){
+    contentParts.push({type:'text', text:'[Image ' + (idx+1) + ']'});
+    contentParts.push({type:'image', source:{type:'base64', media_type:item.att.mediaType, data:item.att.data}});
   });
 
-  // Ajouter les images si présentes
-  if(G.attachments.ticket && G.attachments.ticket.mediaType.startsWith('image')){
-    contentParts.push({type:'image',source:{type:'base64',media_type:G.attachments.ticket.mediaType,data:G.attachments.ticket.data}});
-  }
-  if(G.attachments.notice && G.attachments.notice.mediaType.startsWith('image')){
-    contentParts.push({type:'image',source:{type:'base64',media_type:G.attachments.notice.mediaType,data:G.attachments.notice.data}});
-  }
-  G.attachments.photos.forEach(function(p){
-    contentParts.push({type:'image',source:{type:'base64',media_type:p.mediaType,data:p.data}});
-  });
-
-  callClaudeRaw([{role:'user',content:contentParts}], 1200, function(json){
+  callClaudeRaw([{role:'user', content:contentParts}], 1500, function(json){
     try{
       var d = JSON.parse(json.replace(/```json|```/g,'').trim());
       G.data   = d;
       G.client = d.client;
+
+      if(hasImages && typeof d.ticket_present !== 'undefined'){
+        G.pjStatus.ticket = d.ticket_present === true;
+      }
+
+      var pjDesc = '';
+      if(d.analyse_pj && d.analyse_pj.length){
+        pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return p.type+': '+p.description;}).join(' | ');
+      }
+
       G.chatHistory = [
-        {role:'user',    content:'Mail SAV à traiter :\n'+G.mailBody+(d.analyse_photos?'\n\nPhotos : '+d.analyse_photos:'')},
-        {role:'assistant',content:'J\'ai analysé ce dossier. '+d.resume}
+        {role:'user', content:'Dossier SAV :\nClient : '+(d.client==='su'?'Systeme U':'Intersport')+'\nResume : '+d.resume+'\nRef : '+(d.ref_produit||'?')+'\nPiece : '+(d.designation_piece||'?')+'\nN° dossier : '+(d.numero_dossier||'?')+'\nDate : '+(d.date_reception||'?')+(d.analyse_photos?'\nPhotos : '+d.analyse_photos:'')+pjDesc+'\n\nMail complet :\n'+G.mailBody},
+        {role:'assistant', content:'J\'ai analyse ce dossier. '+d.resume+(d.analyse_photos?' '+d.analyse_photos:'')+' Je suis pret a t\'aider — pose-moi des questions, demande-moi de modifier un champ ou de rediger un message.'}
       ];
       renderResult(d);
-    }catch(e){ showError("Erreur de décodage IA. Réessaye."); }
+    }catch(e){ showError("Erreur de decodage IA. Reessaye."); }
   });
 }
-
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
 function renderResult(d){
   setState('result');
