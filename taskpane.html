@@ -599,7 +599,8 @@ function runAnalysis(){
 
   callClaudeRaw([{role:'user', content:contentParts}], 2000, function(json){
     try{
-      var d = JSON.parse(json.replace(/```json|```/g,'').trim());
+      var cleaned = json.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+        var d = JSON.parse(cleaned);
       G.data   = d;
       G.client = d.client;
 
@@ -608,9 +609,11 @@ function runAnalysis(){
       }
 
       var pjDesc = '';
-      if(d.analyse_pj && d.analyse_pj.length){
-        pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return p.type+': '+p.description;}).join(' | ');
-      }
+      try {
+        if(d.analyse_pj && d.analyse_pj.length){
+          pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return (p.type||'?')+': '+(p.description||'');}).join(' | ');
+        }
+      } catch(e2){}
 
       G.chatHistory = [
         {role:'user', content:'Dossier SAV :\nClient : '+(d.client==='su'?'Systeme U':'Intersport')+'\nResume : '+d.resume+'\nRef : '+(d.ref_produit||'?')+'\nPiece : '+(d.designation_piece||'?')+'\nN° dossier : '+(d.numero_dossier||'?')+'\nDate : '+(d.date_reception||'?')+(d.analyse_photos?'\nPhotos : '+d.analyse_photos:'')+pjDesc+'\n\nMail complet :\n'+G.mailBody},
