@@ -24,7 +24,7 @@
     .topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .topbar-title{font-size:13px;font-weight:600}
     .topbar-btn{font-size:11px;color:#0078d4;background:none;border:none;cursor:pointer;padding:2px 6px}
-    .scroll-area{flex:1;overflow-y:auto;padding-bottom:16px}
+    .scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:80px;-webkit-overflow-scrolling:touch}
 
     /* IDLE */
     #state-idle{padding:20px 16px}
@@ -312,29 +312,24 @@
 
 
 
-      <!-- CHAT CLAUDE — bouton toggle + fenêtre inline -->
-      <div id="chat-bubble-btn" style="display:none;margin:8px 12px 4px;cursor:pointer" onclick="toggleChat()">
-        <div style="background:#0078d4;color:#fff;border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">C</div>
-            <span style="font-size:12px;font-weight:600">Claude — Assistant SAV</span>
+      <!-- CHAT CLAUDE — fenêtre inline qui s'ouvre depuis l'action bar -->
+      <div id="chat-window" style="display:none;margin:0 12px 8px;border:1px solid #cce0f5;border-radius:10px;overflow:hidden;background:#fff">
+        <div style="background:#0078d4;padding:8px 12px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">C</div>
+            <span style="font-size:12px;font-weight:600;color:#fff">Claude — Assistant SAV</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span id="bubble-notif" style="display:none;width:8px;height:8px;background:#e74c3c;border-radius:50%"></span>
-            <span id="bubble-icon" style="font-size:14px;opacity:.8">▼</span>
-          </div>
+          <button onclick="toggleChat()" style="background:none;border:none;color:rgba(255,255,255,0.8);font-size:18px;cursor:pointer;line-height:1;padding:0 4px">×</button>
         </div>
-      </div>
-
-      <div id="chat-window" style="display:none;margin:0 12px 8px;border:1px solid #d0d0d0;border-radius:8px;overflow:hidden">
-        <div class="chat-messages" id="chat-messages" style="max-height:180px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f8f9fa">
+        <div class="chat-messages" id="chat-messages" style="max-height:200px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f5f8ff">
           <div class="msg-ai">Je connais ce dossier. Pose-moi une question, demande-moi de modifier un champ ou de rédiger un message.</div>
         </div>
-        <div style="display:flex;gap:5px;padding:7px 8px;border-top:1px solid #e8e8e8;background:#fff">
-          <input type="text" id="chat-input" placeholder="Pose une question ou donne une directive…" onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;padding:6px 9px;border:1px solid #d0d0d0;border-radius:18px;font-size:12px;font-family:inherit;outline:none"/>
-          <button onclick="sendChat()" style="width:30px;height:30px;border-radius:50%;background:#0078d4;color:#fff;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0">→</button>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid #e0ecf8;background:#fff">
+          <input type="text" id="chat-input" placeholder="Pose une question…" onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;padding:7px 12px;border:1px solid #cce0f5;border-radius:20px;font-size:12px;font-family:inherit;outline:none;background:#f5f8ff"/>
+          <button onclick="sendChat()" style="width:32px;height:32px;border-radius:50%;background:#0078d4;color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">→</button>
         </div>
       </div>
+      <div id="chat-bubble-btn" style="display:none"></div>
 
     </div><!-- /state-result -->
 
@@ -355,7 +350,10 @@
     <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
     <button class="btn btn-secondary" id="btn-csv-fallback"  style="display:none" onclick="validerCSVSemicolon()">Copier format CSV (;) — si Ctrl+V ne fonctionne pas</button>
     <div class="sep"></div>
-    <button class="btn btn-secondary" onclick="resetToIdle()">Nouveau mail</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary" id="btn-chat-open" style="display:none;flex:0 0 44px;padding:9px 0;border-radius:50%;font-size:16px" onclick="toggleChat()" title="Parler à Claude">💬</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="resetToIdle()">Nouveau mail</button>
+    </div>
   </div>
 
 </div>
@@ -555,54 +553,86 @@ function runAnalysis(){
   var defautMot = defautMatch ? defautMatch[0] : '';
 
   var lines = [
-    "Tu es un assistant SAV expert. Analyse ce mail et extrais les informations. Réponds UNIQUEMENT en JSON valide, sans texte autour.",
+    "Tu es un expert SAV qui traite des demandes pour Systeme U (meubles bazar) et Intersport (accessoires sport).",
+    "Lis attentivement ce mail dans son integralite et deduis intelligemment les informations demandees.",
+    "Les mails peuvent etre formules de toutes sortes de manieres — sois souple et interprete le contexte.",
     "",
-    "Mail :",
+    "Mail complet :",
     "Expediteur : " + G.mailSender,
     "Objet : " + G.mailSubject,
-    "Corps :",
+    "---",
     G.mailBody,
-    ""
+    "---",
+    "",
+    "INSTRUCTIONS DE LECTURE :",
+    "",
+    "CLIENT (su/its) : deduis depuis l'expediteur, l'objet, ou le contenu.",
+    "  - Systeme U = mots cles : U, Super U, Hyper U, U Express, Cooperative U, COOP U, systeme u, magasin U",
+    "  - Intersport = mots cles : intersport, sport, ITS",
+    "",
+    "NOM ENSEIGNE :",
+    "  - Pour Systeme U : determine si c'est SUPER U, HYPER U ou U EXPRESS en lisant le mail.",
+    "  - Pour Intersport : nom du magasin tel qu'ecrit.",
+    "  - Si l'objet contient COOPERATIVE_U ou COOP U = Systeme U.",
+    "",
+    "DATE DE RECEPTION :",
+    "  - Utilise en PRIORITE : " + (G.mailDate ? G.mailDate + " (date exacte du mail recuperee automatiquement)" : "non disponible automatiquement — cherche dans le mail") + ".",
+    "  - Si non disponible : lis le mail et trouve toute mention de date, quelle que soit sa forme.",
+    "",
+    "REFERENCE PRODUIT :",
+    "  - Copie la reference technique exacte (ex: ABD-SFKD268WD, VE-3302, QD101-3).",
+    "  - Ne pas mettre une description comme reference.",
+    "  - Elle peut etre appelee : ref, reference, modele, part number, code article, numero de serie.",
+    "",
+    "NUMERO DE DOSSIER :",
+    "  - Cherche un identifiant unique du dossier : N° USV-, ITS-, RS-, dossier n°, etc.",
+    "  - Il peut etre dans l'objet ou dans le corps du mail.",
+    "",
+    "DESIGNATION PIECE :",
+    "  - Ce qui est demande ou defectueux, en termes simples. Max 8 mots.",
+    "  - Ex: 'Coussins assise salon jardin x2', 'Derailleur arriere velo enfant x1'",
+    "",
+    "SUGGESTION TRAITEMENT :",
+    "  - SAV = envoyer une piece de remplacement",
+    "  - Remboursement = avoir ou remboursement financier",
+    "  - Indices pour remboursement : demande d'avoir, remboursement, retour produit, geste commercial",
+    "  - Indices pour SAV : envoyer piece, remplacement, reparation, accessoire manquant"
   ];
 
   if(hasImages){
-    lines.push("Des pieces jointes sont presentes (" + allImages.length + " image(s)).");
-    lines.push("Pour CHAQUE image numerotee ci-dessous :");
-    lines.push("1. Identifie son type parmi : TICKET_FACTURE (ticket de caisse, facture, bon de commande, recu d'achat) / NOTICE (schema, plan, notice annotee avec pieces) / PHOTO_DEFAUT (photo du produit ou du defaut)");
-    lines.push("2. Decris precisement ce que tu vois");
-    if(defautMot){
-      lines.push("3. Pour PHOTO_DEFAUT : cherche SPECIFIQUEMENT le defaut '" + defautMot + "' mentionne dans le mail. Indique s'il est visible et ou exactement.");
-    }
-    lines.push("ticket_present doit etre true UNIQUEMENT si tu vois clairement un document d'achat (ticket caisse, facture, bon de commande).");
     lines.push("");
+    lines.push("PIECES JOINTES (" + allImages.length + " image(s)) :");
+    lines.push("Analyse chaque image avec attention et determine son type :");
+    lines.push("  - TICKET_FACTURE : tout document prouvant un achat — ticket caisse, facture, bon de vente, bon de commande, mandatement, recu, document avec prix et reference produit, bon RMA");
+    lines.push("  - NOTICE : schema, plan, notice technique, document avec pieces indiquees");
+    lines.push("  - PHOTO_DEFAUT : photo du produit ou d'un defaut");
+    if(defautMot){
+      lines.push("  Pour les photos : cherche specifiquement le defaut '" + defautMot + "' mentionne dans le mail.");
+    }
+    lines.push("ticket_present = true si AU MOINS UNE image est un document d'achat de quelque nature que ce soit.");
   }
 
-  lines.push("REGLES STRICTES :");
-  lines.push("- ref_produit : copie la reference EXACTE du mail (ex: ABD-SFKD268WD). Si plusieurs refs, prends la ref article. Ne pas mettre une description.");
-  lines.push("- date_reception : cherche TOUS les formats de date dans le mail : JJ/MM/AAAA, JJ-MM-AAAA, 'le XX mois AAAA', 'envoyé le', 'date:', en-tete email. Si tu en trouves une, mets-la au format DD/MM/YYYY.");
-  lines.push("- designation_piece : max 8 mots, synthetique, ex: 'Coussin assise salon jardin x2'");
-  lines.push("- nom_enseigne : UNIQUEMENT 'SUPER U', 'HYPER U' ou 'U EXPRESS' pour SU — pas d'autre valeur");
   lines.push("");
-  lines.push("JSON attendu :");
+  lines.push("Reponds UNIQUEMENT avec ce JSON valide, sans texte autour :");
   lines.push("{");
   lines.push("  \"client\": \"su\" ou \"its\",");
-  lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" si SU, sinon nom magasin,");
-  lines.push("  \"departement_ville\": \"ex: 67 PARIS\",");
-  lines.push("  \"ref_produit\": \"REFERENCE EXACTE copiee du mail — PAS une description\",");
-  lines.push("  \"ean\": \"code EAN 13 chiffres ou null\",");
-  lines.push("  \"designation_piece\": \"description courte max 8 mots\",");
-  lines.push("  \"numero_dossier\": \"numero de dossier du mail ou null\",");
-  lines.push("  \"quantite\": \"quantite numerique, 1 par defaut\",");
-  lines.push("  \"mois_mail\": \"format MM/YYYY ou null\",");
-  lines.push("  \"date_reception\": \"date du mail DD/MM/YYYY ou null si introuvable\",");
-  lines.push("  \"statut\": \"complet\" ou \"incomplet\" ou \"ambigu\",");
-  lines.push("  \"questions\": [\"questions si infos manquantes, tableau vide sinon\"],");
-  lines.push("  \"resume\": \"1 phrase claire resumant le probleme et la demande\",");
+  lines.push("  \"nom_enseigne\": nom de l'enseigne deduit du mail,");
+  lines.push("  \"departement_ville\": \"ex: 67 STRASBOURG\",");
+  lines.push("  \"ref_produit\": reference technique exacte ou null,");
+  lines.push("  \"ean\": code EAN si present ou null,");
+  lines.push("  \"designation_piece\": description courte max 8 mots,");
+  lines.push("  \"numero_dossier\": identifiant unique du dossier ou null,");
+  lines.push("  \"quantite\": quantite numerique — 1 par defaut,");
+  lines.push("  \"mois_mail\": \"MM/YYYY\" ou null,");
+  lines.push("  \"date_reception\": \"DD/MM/YYYY\" — date du mail,");
+  lines.push("  \"statut\": \"complet\" si toutes les infos cles sont presentes, sinon \"incomplet\",");
+  lines.push("  \"questions\": [infos vraiment manquantes et bloquantes],");
+  lines.push("  \"resume\": resume en 1 phrase claire du probleme et de la demande,");
   lines.push("  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",");
-  lines.push("  \"raison_suggestion\": \"courte justification\",");
-  lines.push("  \"ticket_present\": true si image ticket/facture/recu identifiee, false sinon,");
-  lines.push("  \"analyse_pj\": [{\"type\": \"TICKET_FACTURE/NOTICE/PHOTO_DEFAUT/AUTRE\", \"description\": \"ce que tu vois precisement\"}],");
-  lines.push("  \"analyse_photos\": \"synthese des defauts visibles ou null\",");
+  lines.push("  \"raison_suggestion\": justification courte,");
+  lines.push("  \"ticket_present\": true ou false,");
+  lines.push("  \"analyse_pj\": [{type, description}] ou [] si pas d'images,");
+  lines.push("  \"analyse_photos\": synthese des defauts visibles ou null,");
   lines.push("  \"defaut_visible\": true ou false");
   lines.push("}");
 
@@ -647,9 +677,9 @@ function runAnalysis(){
 // ── AFFICHAGE RÉSULTAT ───────────────────────────────────
 function renderResult(d){
   setState('result');
-  // Afficher le bouton chat
-  var bubble = document.getElementById('chat-bubble-btn');
-  if(bubble) bubble.style.display='block';
+  // Afficher le bouton bulle chat
+  var chatBtn = document.getElementById('btn-chat-open');
+  if(chatBtn) chatBtn.style.display='block';
 
   // Badge client
   var badge = document.getElementById('client-badge');
@@ -1030,12 +1060,10 @@ function copyAndShow(texte, btnId){
 function toggleChat(){
   G.chatOpen=!G.chatOpen;
   var win = document.getElementById('chat-window');
-  win.style.display = G.chatOpen ? 'block' : 'none';
-  document.getElementById('bubble-icon').textContent = G.chatOpen ? '▲' : '▼';
-  if(G.chatOpen){
-    document.getElementById('bubble-notif').style.display='none';
-    setTimeout(function(){ document.getElementById('chat-input').focus(); }, 100);
-  }
+  if(win) win.style.display = G.chatOpen ? 'block' : 'none';
+  var btn = document.getElementById('btn-chat-open');
+  if(btn) btn.style.background = G.chatOpen ? '#005a9e' : '';
+  if(G.chatOpen) setTimeout(function(){ var i=document.getElementById('chat-input'); if(i) i.focus(); }, 100);
 }
 function sendChat(){
   var input = document.getElementById('chat-input');
