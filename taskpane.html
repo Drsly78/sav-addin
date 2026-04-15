@@ -552,87 +552,91 @@ function runAnalysis(){
   var defautMatch = G.mailBody.match(/défaut|cassé|abîmé|fendu|fissuré|brisé|tordu|rayé|manquant|ne fonctionne|bloqué|coincé|déchiré/i);
   var defautMot = defautMatch ? defautMatch[0] : '';
 
+  // Extraire le défaut décrit dans le mail pour guider l'analyse photo
+  var defautDecrit = '';
+  var motifMatch = G.mailBody.match(/[Mm]otif[^:]*:([^\n]{10,200})/);
+  var commentMatch = G.mailBody.match(/[Cc]ommentaire[^:]*:([^\n]{10,200})/);
+  var defautMatch = G.mailBody.match(/[Dd][eé]faut[^.]{5,150}[.]/);
+  if(motifMatch) defautDecrit = motifMatch[1].trim().replace(/[«»"]/g,'').substring(0,200);
+  else if(commentMatch) defautDecrit = commentMatch[1].trim().replace(/[«»"]/g,'').substring(0,200);
+  else if(defautMatch) defautDecrit = defautMatch[0].trim().substring(0,200);
+  else if(defautMot) defautDecrit = defautMot;
+
   var lines = [
-    "Tu es un expert SAV qui traite des demandes pour Systeme U (meubles bazar) et Intersport (accessoires sport).",
-    "Lis attentivement ce mail dans son integralite et deduis intelligemment les informations demandees.",
-    "Les mails peuvent etre formules de toutes sortes de manieres — sois souple et interprete le contexte.",
+    "Tu es un expert SAV. Lis ce mail dans son integralite et deduis intelligemment toutes les informations.",
+    "Ce mail peut venir d'un portail automatique (format structure) ou etre redige manuellement — adapte-toi.",
     "",
-    "Mail complet :",
+    "=== MAIL ===",
     "Expediteur : " + G.mailSender,
     "Objet : " + G.mailSubject,
-    "---",
     G.mailBody,
-    "---",
+    "=== FIN MAIL ===",
     "",
-    "INSTRUCTIONS DE LECTURE :",
+    "DATE : " + (G.mailDate ? "La date exacte du mail est " + G.mailDate + " — utilise cette valeur." : "Cherche une date dans le mail."),
     "",
-    "CLIENT (su/its) : deduis depuis l'expediteur, l'objet, ou le contenu.",
-    "  - Systeme U = mots cles : U, Super U, Hyper U, U Express, Cooperative U, COOP U, systeme u, magasin U",
-    "  - Intersport = mots cles : intersport, sport, ITS",
+    "EXTRACTION INTELLIGENTE — pour chaque champ, lis et interprete :",
     "",
-    "NOM ENSEIGNE :",
-    "  - Pour Systeme U : determine si c'est SUPER U, HYPER U ou U EXPRESS en lisant le mail.",
-    "  - Pour Intersport : nom du magasin tel qu'ecrit.",
-    "  - Si l'objet contient COOPERATIVE_U ou COOP U = Systeme U.",
+    "client : su si Systeme U / Cooperative U / COOP U / Super U / Hyper U / U Express / magasin U. its si Intersport.",
     "",
-    "DATE DE RECEPTION :",
-    "  - Utilise en PRIORITE : " + (G.mailDate ? G.mailDate + " (date exacte du mail recuperee automatiquement)" : "non disponible automatiquement — cherche dans le mail") + ".",
-    "  - Si non disponible : lis le mail et trouve toute mention de date, quelle que soit sa forme.",
+    "nom_enseigne : cherche dans 'Nom :' ou 'Coordonnees'. Extrait uniquement SUPER U, HYPER U ou U EXPRESS.",
+    "  Ex: 'COOPERATIVE U - Super U TRUCHTERSHEIM' => SUPER U",
+    "  Ex: 'Hyper U Bordeaux' => HYPER U",
     "",
-    "REFERENCE PRODUIT :",
-    "  - Copie la reference technique exacte (ex: ABD-SFKD268WD, VE-3302, QD101-3).",
-    "  - Ne pas mettre une description comme reference.",
-    "  - Elle peut etre appelee : ref, reference, modele, part number, code article, numero de serie.",
+    "departement_ville : ville et code dept depuis l'adresse ou le mail. Format: '67 TRUCHTERSHEIM'",
     "",
-    "NUMERO DE DOSSIER :",
-    "  - Cherche un identifiant unique du dossier : N° USV-, ITS-, RS-, dossier n°, etc.",
-    "  - Il peut etre dans l'objet ou dans le corps du mail.",
+    "ref_produit : la reference technique du produit.",
+    "  Cherche dans cet ordre : 'Part number', 'Modele', 'Reference produit', 'Ref', 'Code article'.",
+    "  Prends la valeur courte et technique (ex: ABD-SFKD268WD), PAS la description longue.",
+    "  Si 'Reference produit' contient une description longue ET un 'Part number' existe, prends le Part number.",
     "",
-    "DESIGNATION PIECE :",
-    "  - Ce qui est demande ou defectueux, en termes simples. Max 8 mots.",
-    "  - Ex: 'Coussins assise salon jardin x2', 'Derailleur arriere velo enfant x1'",
+    "numero_dossier : identifiant unique. Cherche 'Dossier numero', 'N°', 'Dossier n°', dans l'objet ou le corps.",
     "",
-    "SUGGESTION TRAITEMENT :",
-    "  - SAV = envoyer une piece de remplacement",
-    "  - Remboursement = avoir ou remboursement financier",
-    "  - Indices pour remboursement : demande d'avoir, remboursement, retour produit, geste commercial",
-    "  - Indices pour SAV : envoyer piece, remplacement, reparation, accessoire manquant"
+    "designation_piece : ce qui est defectueux ou demande. Synthese courte max 8 mots.",
+    "  Lis le motif/commentaire pour comprendre le probleme reel.",
+    "  Ex: 'Coussins assise deformes salon jardin x1'",
+    "",
+    "suggestion_traitement :",
+    "  'Type de dossier: Reparation' ou 'Garantie: SG' = SAV (envoi piece)",
+    "  'Remboursement' ou 'Avoir' dans le texte = remboursement",
+    ""
   ];
 
   if(hasImages){
-    lines.push("");
-    lines.push("PIECES JOINTES (" + allImages.length + " image(s)) :");
-    lines.push("Analyse chaque image avec attention et determine son type :");
-    lines.push("  - TICKET_FACTURE : tout document prouvant un achat — ticket caisse, facture, bon de vente, bon de commande, mandatement, recu, document avec prix et reference produit, bon RMA");
-    lines.push("  - NOTICE : schema, plan, notice technique, document avec pieces indiquees");
-    lines.push("  - PHOTO_DEFAUT : photo du produit ou d'un defaut");
-    if(defautMot){
-      lines.push("  Pour les photos : cherche specifiquement le defaut '" + defautMot + "' mentionne dans le mail.");
+    lines.push("=== ANALYSE DES PIECES JOINTES ===");
+    lines.push("Tu vas recevoir " + allImages.length + " image(s). Avant de les analyser, voici le contexte du defaut declare :");
+    if(defautDecrit){
+      lines.push("DEFAUT DECLARE : " + defautDecrit);
+      lines.push("=> Cherche SPECIFIQUEMENT ce defaut sur chaque image. Decris precisement s'il est visible, ou, et comment.");
     }
-    lines.push("ticket_present = true si AU MOINS UNE image est un document d'achat de quelque nature que ce soit.");
+    lines.push("");
+    lines.push("Pour chaque image, determine :");
+    lines.push("1. Son type : TICKET_FACTURE (ticket, facture, bon de vente, bon de commande, mandatement, document avec prix) / NOTICE (schema, plan, notice avec pieces) / PHOTO_DEFAUT (photo produit)");
+    lines.push("2. Ce que tu vois precisement");
+    lines.push("3. Si PHOTO_DEFAUT : est-ce que le defaut declare est visible ? Decris exactement ce que tu observes.");
+    lines.push("ticket_present = true si au moins une image est un document d'achat de quelque nature que ce soit.");
+    lines.push("");
   }
 
-  lines.push("");
   lines.push("Reponds UNIQUEMENT avec ce JSON valide, sans texte autour :");
   lines.push("{");
   lines.push("  \"client\": \"su\" ou \"its\",");
-  lines.push("  \"nom_enseigne\": nom de l'enseigne deduit du mail,");
-  lines.push("  \"departement_ville\": \"ex: 67 STRASBOURG\",");
-  lines.push("  \"ref_produit\": reference technique exacte ou null,");
-  lines.push("  \"ean\": code EAN si present ou null,");
+  lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" pour SU, nom magasin pour ITS,");
+  lines.push("  \"departement_ville\": \"67 TRUCHTERSHEIM\",");
+  lines.push("  \"ref_produit\": reference technique exacte (Part number de preference),");
+  lines.push("  \"ean\": code EAN ou null,");
   lines.push("  \"designation_piece\": description courte max 8 mots,");
-  lines.push("  \"numero_dossier\": identifiant unique du dossier ou null,");
-  lines.push("  \"quantite\": quantite numerique — 1 par defaut,");
+  lines.push("  \"numero_dossier\": identifiant unique du dossier,");
+  lines.push("  \"quantite\": \"1\" par defaut,");
   lines.push("  \"mois_mail\": \"MM/YYYY\" ou null,");
-  lines.push("  \"date_reception\": \"DD/MM/YYYY\" — date du mail,");
-  lines.push("  \"statut\": \"complet\" si toutes les infos cles sont presentes, sinon \"incomplet\",");
-  lines.push("  \"questions\": [infos vraiment manquantes et bloquantes],");
-  lines.push("  \"resume\": resume en 1 phrase claire du probleme et de la demande,");
+  lines.push("  \"date_reception\": \"DD/MM/YYYY\",");
+  lines.push("  \"statut\": \"complet\" si les infos cles sont presentes,");
+  lines.push("  \"questions\": [],");
+  lines.push("  \"resume\": resume en 1 phrase,");
   lines.push("  \"suggestion_traitement\": \"sav\" ou \"remboursement\" ou \"indetermine\",");
-  lines.push("  \"raison_suggestion\": justification courte,");
+  lines.push("  \"raison_suggestion\": justification,");
   lines.push("  \"ticket_present\": true ou false,");
-  lines.push("  \"analyse_pj\": [{type, description}] ou [] si pas d'images,");
-  lines.push("  \"analyse_photos\": synthese des defauts visibles ou null,");
+  lines.push("  \"analyse_pj\": [{type, description}],");
+  lines.push("  \"analyse_photos\": synthese des observations sur les photos ou null,");
   lines.push("  \"defaut_visible\": true ou false");
   lines.push("}");
 
@@ -651,6 +655,14 @@ function runAnalysis(){
       G.data   = d;
       G.client = d.client;
 
+      // Normaliser nom_enseigne — l'IA peut retourner des variantes
+      if(d.client === 'su' && d.nom_enseigne){
+        var e = d.nom_enseigne.toUpperCase();
+        if(e.indexOf('HYPER') >= 0)       d.nom_enseigne = 'HYPER U';
+        else if(e.indexOf('EXPRESS') >= 0) d.nom_enseigne = 'U EXPRESS';
+        else if(e.indexOf('SUPER') >= 0 || e.indexOf(' U') >= 0 || e.indexOf('COOP') >= 0) d.nom_enseigne = 'SUPER U';
+      }
+
       if(hasImages && typeof d.ticket_present !== 'undefined'){
         G.pjStatus.ticket = d.ticket_present === true;
       }
@@ -662,9 +674,36 @@ function runAnalysis(){
         }
       } catch(e2){}
 
+      // Construire un contexte riche pour le chat
+      var pjContext = '';
+      if(d.analyse_pj && d.analyse_pj.length){
+        pjContext = '\n\nPIECES JOINTES ANALYSEES :\n' + d.analyse_pj.map(function(p,i){
+          return '  Image '+(i+1)+' — '+p.type+' : '+p.description;
+        }).join('\n');
+      }
+      if(d.analyse_photos) pjContext += '\n\nDEFAUTS VISIBLES : ' + d.analyse_photos;
+      if(d.ticket_present) pjContext += '\n\nTICKET/FACTURE : present et identifie';
+
       G.chatHistory = [
-        {role:'user', content:'Dossier SAV :\nClient : '+(d.client==='su'?'Systeme U':'Intersport')+'\nResume : '+d.resume+'\nRef : '+(d.ref_produit||'?')+'\nPiece : '+(d.designation_piece||'?')+'\nN° dossier : '+(d.numero_dossier||'?')+'\nDate : '+(d.date_reception||'?')+(d.analyse_photos?'\nPhotos : '+d.analyse_photos:'')+pjDesc+'\n\nMail complet :\n'+G.mailBody},
-        {role:'assistant', content:'J\'ai analyse ce dossier. '+d.resume+(d.analyse_photos?' '+d.analyse_photos:'')+' Je suis pret a t\'aider — pose-moi des questions, demande-moi de modifier un champ ou de rediger un message.'}
+        {role:'user', content:
+          "Voici le dossier SAV complet que tu viens d'analyser :\n\n" +
+          'CLIENT : '+(d.client==='su'?'Systeme U':'Intersport')+'\n' +
+          'ENSEIGNE : '+(d.nom_enseigne||'?')+'\n' +
+          'DEPARTEMENT : '+(d.departement_ville||'?')+'\n' +
+          'REFERENCE : '+(d.ref_produit||'?')+'\n' +
+          'PIECE DEMANDEE : '+(d.designation_piece||'?')+'\n' +
+          'N° DOSSIER : '+(d.numero_dossier||'?')+'\n' +
+          'DATE : '+(d.date_reception||'?')+'\n' +
+          'STATUT : '+(d.statut||'?')+'\n' +
+          'SUGGESTION : '+(d.suggestion_traitement||'?')+' — '+(d.raison_suggestion||'')+'\n' +
+          pjContext +
+          '\n\nMAIL ORIGINAL :\n' + G.mailBody
+        },
+        {role:"assistant", content:
+          "J'ai analyse ce dossier. " + d.resume +
+          (pjContext ? " J'ai egalement analyse les pieces jointes." : "") +
+          " Je suis pret a repondre a tes questions, modifier des champs ou rediger des messages."
+        }
       ];
       renderResult(d);
     }catch(e){
