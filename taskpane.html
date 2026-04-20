@@ -342,30 +342,24 @@ var G = {
 };
 
 // ── OFFICE INIT ──────────────────────────────────────────
-var LS = {
-  _d: {},
-  getItem: function(k){ try{ return LS.getItem(k); }catch(e){ return this._d[k]||null; } },
-  setItem: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ this._d[k]=v; } }
-};
-
 Office.onReady(function(){
-  if(LS.getItem('sav_api_key')) showMain();
+  if(localStorage.getItem('sav_api_key')) showMain();
 });
 
 // ── CONFIG ───────────────────────────────────────────────
 function saveConfig(){
   var key = document.getElementById('api-key-input').value.trim();
   if(!key.startsWith('sk-ant-')){ alert('Clé invalide — doit commencer par sk-ant-'); return; }
-  LS.setItem('sav_api_key', key);
-  LS.setItem('next_su',  document.getElementById('next-su').value  || '1');
-  LS.setItem('next_its', document.getElementById('next-its').value || '1');
+  localStorage.setItem('sav_api_key', key);
+  localStorage.setItem('next_su',  document.getElementById('next-su').value  || '1');
+  localStorage.setItem('next_its', document.getElementById('next-its').value || '1');
   showMain();
 }
 function showConfig(){
   document.getElementById('screen-config').style.display='block';
   document.getElementById('screen-main').style.display='none';
-  document.getElementById('next-su').value  = LS.getItem('next_su')  || '1';
-  document.getElementById('next-its').value = LS.getItem('next_its') || '1';
+  document.getElementById('next-su').value  = localStorage.getItem('next_su')  || '1';
+  document.getElementById('next-its').value = localStorage.getItem('next_its') || '1';
 }
 function showMain(){
   document.getElementById('screen-config').style.display='none';
@@ -666,10 +660,6 @@ function runAnalysis(){
       try {
         if(d.analyse_pj && d.analyse_pj.length){
           pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return (p.type||'?')+': '+(p.description||'');}).join(' | ');
-          if(!d.analyse_photos){
-            var pd = d.analyse_pj.filter(function(p){return p.type==='PHOTO_DEFAUT';}).map(function(p){return p.description;});
-            if(pd.length) d.analyse_photos = pd.join(' / ');
-          }
         }
       } catch(e2){}
 
@@ -989,12 +979,12 @@ function genAccord(client){
   var yy  = String(now.getFullYear()).slice(2);
   var mm  = String(now.getMonth()+1).padStart(2,'0');
   var key = client==='su'?'next_su':'next_its';
-  var num = parseInt(LS.getItem(key)||'1');
+  var num = parseInt(localStorage.getItem(key)||'1');
   return (client==='su'?'SU':'ITS')+yy+mm+String(num).padStart(3,'0');
 }
 function incrementAccord(client){
   var key = client==='su'?'next_su':'next_its';
-  LS.setItem(key, String(parseInt(LS.getItem(key)||'1')+1));
+  localStorage.setItem(key, String(parseInt(localStorage.getItem(key)||'1')+1));
 }
 
 // ── CSV ──────────────────────────────────────────────────
@@ -1158,7 +1148,7 @@ function formatChatReply(text){
 
 // ── API CLAUDE ───────────────────────────────────────────
 function callClaudeRaw(messages, maxTokens, cb){
-  var key = LS.getItem('sav_api_key');
+  var key = localStorage.getItem('sav_api_key');
   if(!key){ showError("Clé API manquante."); return; }
   var controller = new AbortController();
   var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 30000);
@@ -1179,7 +1169,7 @@ function callClaudeRaw(messages, maxTokens, cb){
   .catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
 }
 function callClaudeChat(sys, history, cb){
-  var key = LS.getItem('sav_api_key');
+  var key = localStorage.getItem('sav_api_key');
   if(!key) return;
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
