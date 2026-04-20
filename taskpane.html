@@ -30,17 +30,7 @@
     #state-idle{padding:20px 16px}
     #state-idle p{font-size:12px;color:#666;line-height:1.6;margin-bottom:14px;text-align:center}
 
-    /* TEST ZONE */
-    .test-zone{border-top:1px solid #e8e8e8;padding-top:14px;margin-top:4px}
-    .test-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-    textarea#test-mail{width:100%;height:100px;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:"Segoe UI",Arial,sans-serif;resize:vertical;color:#333;background:#fff}
-    input#test-subject{width:100%;margin-top:5px;padding:7px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:"Segoe UI",Arial,sans-serif}
-    textarea#test-mail:focus,input#test-subject:focus{outline:none;border-color:#0078d4}
 
-    /* PJ UPLOAD */
-    .pj-upload-zone{margin-top:8px}
-    .pj-drop-zone{border:1.5px dashed #d0d0d0;border-radius:6px;padding:12px;text-align:center;cursor:pointer;transition:border-color .15s;background:#fafafa}
-    .pj-drop-zone:hover{border-color:#0078d4;background:#f0f7ff}
     .pj-upload-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
     .pj-upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
     .pj-slot{border:1.5px dashed #d0d0d0;border-radius:6px;padding:8px 4px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
@@ -217,27 +207,9 @@
   <div class="scroll-area">
 
     <!-- IDLE -->
-    <div id="state-idle">
-      <p>Ouvre un mail SAV puis clique sur Analyser.</p>
+    <div id="state-idle" style="padding:40px 20px;text-align:center">
+      <p style="font-size:12px;color:#666;line-height:1.6;margin-bottom:20px">Ouvre un mail SAV dans Outlook<br/>puis clique sur Analyser.</p>
       <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">Analyser ce mail</button>
-
-      <div class="test-zone">
-        <div class="test-label">Mode test — simuler un mail</div>
-        <input id="test-subject" placeholder="Objet du mail (optionnel)"/>
-        <textarea id="test-mail" placeholder="Colle ici le texte d'un mail SAV…"></textarea>
-
-        <div class="pj-upload-zone">
-          <div class="pj-upload-label">Pièces jointes test</div>
-          <div class="pj-drop-zone" onclick="document.getElementById('pj-multi-input').click()">
-            <input type="file" id="pj-multi-input" accept="image/*,.pdf" multiple style="display:none" onchange="handleMultiUpload(this)"/>
-            <div style="font-size:13px;color:#888;margin-bottom:3px">Cliquer pour sélectionner les fichiers</div>
-            <div style="font-size:11px;color:#aaa">Ticket + notice + photos — tout en une fois</div>
-          </div>
-          <div id="pj-file-list" style="margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
-        </div>
-
-        <button class="btn btn-secondary" style="margin-top:8px" onclick="analyzeTest()">Analyser ce texte</button>
-      </div>
     </div>
 
     <!-- LOADING -->
@@ -406,11 +378,7 @@ function resetToIdle(){
   document.getElementById('chat-body').style.display='none';
   document.getElementById('chat-icon').textContent='▼';
   document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
-  // reset upload
-  var pjInput = document.getElementById('pj-multi-input');
-  if(pjInput) pjInput.value='';
-  var pjList = document.getElementById('pj-file-list');
-  if(pjList) pjList.innerHTML='';
+
 }
 function setState(s){
   ['idle','loading','result','error'].forEach(function(x){
@@ -418,41 +386,8 @@ function setState(s){
   });
 }
 
-// ── GESTION UPLOADS TEST ─────────────────────────────────
-function handleMultiUpload(input){
-  if(!input.files||!input.files.length) return;
-  G.attachments = {ticket:null, notice:null, photos:[]};
-  var list = document.getElementById('pj-file-list');
-  list.innerHTML = '';
-  Array.from(input.files).forEach(function(f){
-    readFileB64(f, function(b64, mt){
-      var n = f.name.toLowerCase();
-      var classified;
-      if(n.match(/ticket|facture|recu|receipt|caisse/i)){
-        G.attachments.ticket = {data:b64, mediaType:mt, name:f.name};
-        classified = 'Ticket/Facture';
-      } else if(n.match(/notice|schema|plan|notice/i)){
-        G.attachments.notice = {data:b64, mediaType:mt, name:f.name};
-        classified = 'Notice';
-      } else {
-        G.attachments.photos.push({data:b64, mediaType:mt, name:f.name});
-        classified = 'Photo';
-      }
-      var row = document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;background:#f0faf3;border:1px solid #a8d5b5;border-radius:5px;';
-      row.innerHTML='<span style="color:#1e7e34;font-weight:600">'+classified+'</span><span style="color:#555">'+f.name+'</span>';
-      list.appendChild(row);
-    });
-  });
-  G.pjStatus.ticket = false;
-  G.pjStatus.notice = false;
-  G.pjStatus.photo  = false;
-}
-function readFileB64(file, cb){
-  var reader = new FileReader();
-  reader.onload = function(e){ cb(e.target.result.split(',')[1], file.type||'image/jpeg'); };
-  reader.readAsDataURL(file);
-}
+
+
 
 // ── ANALYSE EMAIL (Outlook) ──────────────────────────────
 function analyzeEmail(){
@@ -563,8 +498,14 @@ function runAnalysis(){
   else if(defautMot) defautDecrit = defautMot;
 
   var lines = [
-    "Tu es un expert SAV. Lis ce mail dans son integralite et deduis intelligemment toutes les informations.",
-    "Ce mail peut venir d'un portail automatique (format structure) ou etre redige manuellement — adapte-toi.",
+    "Tu es un assistant specialise dans le traitement de demandes SAV",
+    "pour une entreprise qui distribue des produits bazar et accessoires sport",
+    "a Systeme U et Intersport.",
+    "",
+    "Lis ce mail en entier. Comprends qui ecrit, pourquoi, quel est le probleme",
+    "et ce qui est attendu. Les mails peuvent etre tres varies dans leur forme —",
+    "portail automatique, mail redige a la main, transfert, reponse — adapte-toi",
+    "a chaque cas sans chercher des mots-cles fixes.",
     "",
     "=== MAIL ===",
     "Expediteur : " + G.mailSender,
@@ -572,48 +513,80 @@ function runAnalysis(){
     G.mailBody,
     "=== FIN MAIL ===",
     "",
-    "DATE : " + (G.mailDate ? "La date exacte du mail est " + G.mailDate + " — utilise cette valeur." : "Cherche une date dans le mail."),
+    "DATE DE RECEPTION : " + (G.mailDate || "non disponible"),
+    "Cette date est celle a laquelle le mail a ete recu.",
+    "C'est la seule date qui compte — elle ne sera pas dans le corps du mail.",
     "",
-    "EXTRACTION INTELLIGENTE — pour chaque champ, lis et interprete :",
+    "---",
     "",
-    "client : su si Systeme U / Cooperative U / COOP U / Super U / Hyper U / U Express / magasin U. its si Intersport.",
+    "Une fois que tu as compris le mail, extrais ces informations :",
     "",
-    "nom_enseigne : cherche dans 'Nom :' ou 'Coordonnees'. Extrait uniquement SUPER U, HYPER U ou U EXPRESS.",
-    "  Ex: 'COOPERATIVE U - Super U TRUCHTERSHEIM' => SUPER U",
-    "  Ex: 'Hyper U Bordeaux' => HYPER U",
+    "CLIENT — Systeme U ou Intersport ?",
+    "Indices pour Systeme U : Super U, Hyper U, U Express, Cooperative U,",
+    "COOP U, magasin U, portail USV, rma@monsav.com",
+    "Indices pour Intersport : Intersport, ITS, intersport.fr",
     "",
-    "departement_ville : ville et code dept depuis l'adresse ou le mail. Format: '67 TRUCHTERSHEIM'",
+    "ENSEIGNE — nom du magasin",
+    "Pour Systeme U : retourne uniquement SUPER U, HYPER U ou U EXPRESS",
+    "Exemple : 'COOPERATIVE U - Super U TRUCHTERSHEIM' => SUPER U",
+    "Pour Intersport : nom du magasin tel qu'il apparait",
     "",
-    "ref_produit : la reference technique du produit.",
-    "  Cherche dans cet ordre : 'Part number', 'Modele', 'Reference produit', 'Ref', 'Code article'.",
-    "  Prends la valeur courte et technique (ex: ABD-SFKD268WD), PAS la description longue.",
-    "  Si 'Reference produit' contient une description longue ET un 'Part number' existe, prends le Part number.",
+    "LOCALISATION — departement et ville du magasin",
+    "Cherche dans l'adresse. Format : '67 TRUCHTERSHEIM'",
     "",
-    "numero_dossier : identifiant unique. Cherche 'Dossier numero', 'N°', 'Dossier n°', dans l'objet ou le corps.",
+    "REFERENCE PRODUIT — reference technique du produit concerne",
+    "Cherche : Part number, Modele, Code article, Reference produit",
+    "Prends la valeur courte et technique. Si plusieurs references,",
+    "prends la plus precise (Part number en priorite).",
+    "Ne jamais mettre une description comme reference.",
     "",
-    "designation_piece : ce qui est defectueux ou demande. Synthese courte max 8 mots.",
-    "  Lis le motif/commentaire pour comprendre le probleme reel.",
-    "  Ex: 'Coussins assise deformes salon jardin x1'",
+    "EAN — code a 13 chiffres si present",
     "",
-    "suggestion_traitement :",
-    "  'Type de dossier: Reparation' ou 'Garantie: SG' = SAV (envoi piece)",
-    "  'Remboursement' ou 'Avoir' dans le texte = remboursement",
-    ""
+    "NUMERO DE DOSSIER — identifiant unique du dossier",
+    "Peut etre dans l'objet ou le corps du mail",
+    "",
+    "LE PROBLEME ET CE QUI EST DEMANDE",
+    "Lis le motif, les commentaires, la description. Comprends ce qui est",
+    "vraiment defectueux et ce que le magasin attend comme reponse.",
+    "Formule en 8 mots max avec quantite. Ex : 'Coussins assise deformes x1'",
+    "",
+    "TRAITEMENT SUGGERE",
+    "SAV = envoi d'une piece de remplacement",
+    "Remboursement = avoir financier ou retour",
+    "Deduis-le depuis le contexte global du mail, pas uniquement depuis",
+    "un mot-cle. Un mail qui decrit un defaut et demande une solution",
+    "pointe vers du SAV. Un mail qui mentionne un retour ou un avoir",
+    "pointe vers un remboursement.",
+    "",
+    "---"
   ];
 
   if(hasImages){
-    lines.push("=== ANALYSE DES PIECES JOINTES ===");
-    lines.push("Tu vas recevoir " + allImages.length + " image(s). Avant de les analyser, voici le contexte du defaut declare :");
+    lines.push("");
+    lines.push("ANALYSE DES PIECES JOINTES");
+    lines.push("");
+    lines.push("Commence par relire le probleme declare dans le mail.");
+    lines.push("Garde-le en tete — c'est ce que tu vas chercher sur les photos.");
     if(defautDecrit){
-      lines.push("DEFAUT DECLARE : " + defautDecrit);
-      lines.push("=> Cherche SPECIFIQUEMENT ce defaut sur chaque image. Decris precisement s'il est visible, ou, et comment.");
+      lines.push("PROBLEME DECLARE : " + defautDecrit);
     }
     lines.push("");
-    lines.push("Pour chaque image, determine :");
-    lines.push("1. Son type : TICKET_FACTURE (ticket, facture, bon de vente, bon de commande, mandatement, document avec prix) / NOTICE (schema, plan, notice avec pieces) / PHOTO_DEFAUT (photo produit)");
-    lines.push("2. Ce que tu vois precisement");
-    lines.push("3. Si PHOTO_DEFAUT : est-ce que le defaut declare est visible ? Decris exactement ce que tu observes.");
-    lines.push("ticket_present = true si au moins une image est un document d'achat de quelque nature que ce soit.");
+    lines.push("Pour chaque image, determine d'abord son type :");
+    lines.push("- Document d'achat : tout document qui prouve qu'un achat a eu lieu —");
+    lines.push("  ticket de caisse, facture, bon de commande, bon de vente, mandatement,");
+    lines.push("  bon RMA, ou tout document contenant le nom du produit et son prix.");
+    lines.push("  Ce n'est pas forcement un ticket papier classique.");
+    lines.push("- Notice ou schema : document technique avec des pieces indiquees");
+    lines.push("- Photo du produit ou du defaut");
+    lines.push("");
+    lines.push("Pour les photos du produit :");
+    lines.push("Regarde attentivement. Le defaut peut etre subtil — une deformation,");
+    lines.push("une rayure, un affaissement, un jeu mecanique, une couleur anormale.");
+    lines.push("Decris precisement ce que tu vois et dis si cela correspond au defaut");
+    lines.push("declare dans le mail.");
+    lines.push("");
+    lines.push("ticket_present = true si au moins une image est un document prouvant");
+    lines.push("un achat, quelle que soit sa forme.");
     lines.push("");
   }
 
@@ -622,10 +595,10 @@ function runAnalysis(){
   lines.push("  \"client\": \"su\" ou \"its\",");
   lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" pour SU, nom magasin pour ITS,");
   lines.push("  \"departement_ville\": \"67 TRUCHTERSHEIM\",");
-  lines.push("  \"ref_produit\": reference technique exacte (Part number de preference),");
+  lines.push("  \"ref_produit\": reference technique exacte,");
   lines.push("  \"ean\": code EAN ou null,");
   lines.push("  \"designation_piece\": description courte max 8 mots,");
-  lines.push("  \"numero_dossier\": identifiant unique du dossier,");
+  lines.push("  \"numero_dossier\": identifiant unique ou null,");
   lines.push("  \"quantite\": \"1\" par defaut,");
   lines.push("  \"mois_mail\": \"MM/YYYY\" ou null,");
   lines.push("  \"date_reception\": \"DD/MM/YYYY\",");
