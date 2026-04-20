@@ -782,6 +782,26 @@ function runAnalysis(){
       G.data   = d;
       G.client = d.client;
 
+      // Si ref produit trouvée, re-analyser avec la notice pour affiner la désignation
+      if(d.ref_produit && d.ref_produit.length > 3 && d.ref_produit !== 'null'){
+        setLoadingMsg('Consultation notice produit…','');
+        var noticeMsg = [{role:'user', content:[{type:'text', text:
+          'Dossier SAV — Ref: ' + d.ref_produit + ' — Problème: ' + (d.designation_piece||d.resume||'') +
+          '\nEn regardant la notice technique ci-jointe, identifie la pièce exacte à remplacer.' +
+          '\nRéponds UNIQUEMENT avec: "Pièce X × N — description courte" (ex: Pièce E × 2 — Coussin assise)' +
+          '\nSi la notice ne permet pas d\'identifier la pièce, réponds: NON_APPLICABLE'
+        }]}];
+        callClaudeRaw(noticeMsg, 150, function(noticeReply){
+          var r = (noticeReply||'').trim();
+          if(r && r !== 'NON_APPLICABLE' && r.length > 5){
+            G.data.designation_piece = r;
+            d.designation_piece = r;
+          }
+          renderResult(d);
+        }, d.ref_produit);
+        return;
+      }
+
       // Normaliser nom_enseigne — l'IA peut retourner des variantes
       if(d.client === 'su' && d.nom_enseigne){
         var e = d.nom_enseigne.toUpperCase();
@@ -1409,14 +1429,17 @@ function chatCopy(btn, text){
 }
 
 // ── API CLAUDE ───────────────────────────────────────────
-function callClaudeRaw(messages, maxTokens, cb){
+function callClaudeRaw(messages, maxTokens, cb, refProduit){
   var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 60000);
-  fetch('https://sav-server-production.up.railway.app/analyze',{
+  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 90000);
+  var endpoint = refProduit ? '/analyze-with-notice' : '/analyze';
+  var reqBody = {messages:messages, max_tokens:maxTokens||2000};
+  if(refProduit) reqBody.ref_produit = refProduit;
+  fetch('https://sav-server-production.up.railway.app' + endpoint,{
     method:'POST',
     signal:controller.signal,
     headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
-    body:JSON.stringify({messages:messages, max_tokens:maxTokens||2000})
+    body:JSON.stringify(reqBody)
   }).then(function(r){
     if(!r.ok) return r.json().then(function(e){ throw new Error('HTTP '+r.status+' — '+JSON.stringify(e)); });
     return r.json();
