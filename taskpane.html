@@ -446,11 +446,22 @@ function loadOutlookAttachments(attachments, cb){
     pending++;
     Office.context.mailbox.item.getAttachmentContentAsync(att.id, function(res){
       if(res.status===Office.AsyncResultStatus.Succeeded){
-        var b64  = res.value.content;
-        var mime = isImage ? 'image/jpeg' : 'application/pdf';
-        // Classer toutes les images/PDF comme photos pour que l'IA les analyse
-        // L'IA déterminera elle-même ce qui est ticket, notice ou photo
-        imageAtts.push({data:b64, mediaType:mime, name:att.name});
+        var content = res.value.content;
+        var format  = res.value.format;
+        var mime    = isImage ? 'image/jpeg' : 'application/pdf';
+        // Outlook peut retourner base64 ou url — on veut toujours base64
+        var b64 = content;
+        if(format === Office.MailboxEnums.AttachmentContentFormat.Url){
+          // Format URL non supporté pour l'analyse IA — ignorer
+          pending--;
+          if(pending===0){ G.attachments.photos=imageAtts; G.pjStatus.photo=imageAtts.length>0; cb(); }
+          return;
+        }
+        // Nettoyer le base64 si préfixe data: présent
+        if(b64 && b64.indexOf('base64,') > -1){
+          b64 = b64.split('base64,')[1];
+        }
+        if(b64) imageAtts.push({data:b64, mediaType:mime, name:att.name});
       }
       pending--;
       if(pending===0){
@@ -625,7 +636,7 @@ function runAnalysis(){
   lines.push("  \"raison_suggestion\": justification,");
   lines.push("  \"ticket_present\": true ou false,");
   lines.push("  \"analyse_pj\": [{type, description}],");
-  lines.push("  \"analyse_photos\": synthese des observations sur les photos ou null,");
+  lines.push("  \"analyse_photos\": description OBLIGATOIRE de ce que tu vois sur les photos — jamais null si des images sont presentes. Meme si le produit semble en bon etat, decris ce que tu observes.,");
   lines.push("  \"defaut_visible\": true ou false");
   lines.push("}");
 
@@ -804,7 +815,8 @@ function renderPJStatus(d){
   // Photos
   var defautVisible = d && d.defaut_visible;
   if(G.pjStatus.photo){
-    html += pjItem('ok', 'Photos ('+G.attachments.photos.length+')', 'Analysées par IA', false, false);
+    var photoLabel = defautVisible ? 'Défaut visible — analysé' : 'Analysées par IA';
+    html += pjItem('ok', 'Photos ('+G.attachments.photos.length+')', photoLabel, false, false);
   } else if(defautVisible && !G.pjIgnored.photo){
     html += pjItem('warn', 'Photos absentes', 'Défaut visible mentionné — photos recommandées', false, 'photo');
   } else if(!defautVisible){
