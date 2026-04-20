@@ -792,18 +792,22 @@ function runAnalysis(){
           '\n- Format OBLIGATOIRE : "X × N" (ex: G × 4, E × 2, B × 1)' +
           '\n- X = lettre de la pièce dans la notice' +
           '\n- N = quantité TOTALE pour l\'ensemble du produit (ex: canapé + 2 fauteuils = total)' +
-          '\n- Si la quantité exacte dans le mail n\'est pas précisée, mets un ? : "G × ?" ' +
+          '\n- N = quantité explicitement mentionnée dans le mail OU quantité totale du produit si "tous les coussins/pièces" est dit' +
+          '\n- Si le mail NE PRÉCISE PAS combien de pièces sont impactées (pas de chiffre, pas de "tous"), mets ?: "G × ?"' +
           '\n- Rien d\'autre — pas d\'explication, pas de phrase, juste "X × N" ou "X × ?"' +
           '\nSi la notice ne permet pas d\'identifier la pièce : NON_APPLICABLE'
         }]}];
         callClaudeRaw(noticeMsg, 150, function(noticeReply){
           var r = (noticeReply||'').trim();
           if(r && r !== 'NON_APPLICABLE' && r.length > 1){
-            G.data.designation_piece = r;
-            d.designation_piece = r;
-            // Si quantité inconnue (×?), signaler dans la suggestion
+            // Ajouter mention source notice dans le récap
+            var labelNotice = r + ' (notice)';
+            G.data.designation_piece = labelNotice;
+            d.designation_piece = labelNotice;
+            // Signaler quantité inconnue dans suggestion
             if(r.indexOf('?') >= 0){
-              var note = ' — Demander combien de pièces ' + r.split('×')[0].trim() + ' sont impactées';
+              var pieceId = r.split('×')[0].trim();
+              var note = ' — Préciser combien de pièces ' + pieceId + ' sont à remplacer (non indiqué dans le mail)';
               d.raison_suggestion = (d.raison_suggestion||'') + note;
               G.data.raison_suggestion = d.raison_suggestion;
             }
