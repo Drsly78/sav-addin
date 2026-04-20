@@ -226,9 +226,26 @@
         <span id="statut-pill"></span>
       </div>
 
-      <!-- STATUT PIÈCES JOINTES -->
-      <div class="pj-status" id="pj-status-block">
-        <div class="pj-status-header">Pièces jointes</div>
+      <!-- UPLOAD PJ MANUEL -->
+      <div id="pj-upload-section" style="margin:8px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">
+        <div style="background:#f5f5f5;padding:7px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between">
+          <span>Pièces jointes</span>
+          <span id="pj-count" style="font-size:11px;color:#888;font-weight:400"></span>
+        </div>
+        <div style="padding:10px 12px">
+          <div id="pj-drop" onclick="document.getElementById('pj-input').click()" style="border:1.5px dashed #d0d0d0;border-radius:6px;padding:12px;text-align:center;cursor:pointer;background:#fafafa" onmouseover="this.style.borderColor='#0078d4';this.style.background='#f0f7ff'" onmouseout="this.style.borderColor='#d0d0d0';this.style.background='#fafafa'">
+            <input type="file" id="pj-input" accept="image/*,.pdf" multiple style="display:none" onchange="handlePJUpload(this)"/>
+            <div style="font-size:12px;color:#888">Glisser ou cliquer pour ajouter</div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px">Ticket + notice + photos du défaut</div>
+          </div>
+          <div id="pj-list" style="margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
+          <button id="pj-analyse-btn" style="display:none;width:100%;margin-top:8px;padding:8px;background:#0078d4;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" onclick="analyserPJManuelles()">Analyser les pièces jointes</button>
+        </div>
+      </div>
+
+      <!-- STATUT PIÈCES JOINTES (mis à jour après analyse) -->
+      <div id="pj-status-block" style="display:none">
+        <div class="pj-status-header">Résultat analyse pièces jointes</div>
         <div id="pj-status-list"></div>
       </div>
 
@@ -335,11 +352,10 @@ var G = {
   data:null, client:null, mode:null,
   csvLine:null, accordNum:null,
   chatHistory:[], chatOpen:false,
-  mailBody:'', mailSubject:'', mailSender:'', mailDate:null,
+  mailBody:'', mailSubject:'', mailSender:'',
   attachments:{ ticket:null, notice:null, photos:[] },
   pjStatus:{ ticket:false, notice:false, photo:false },
-  pjIgnored:{ notice:false, photo:false },
-  pjAccessDenied: false
+  pjIgnored:{ notice:false, photo:false }
 };
 
 // ── OFFICE INIT ──────────────────────────────────────────
@@ -376,13 +392,9 @@ function resetToIdle(){
      pjIgnored:{notice:false,photo:false}};
   setState('idle');
   document.getElementById('action-bar').style.display='none';
-  var chatWin = document.getElementById('chat-window');
-  if(chatWin) chatWin.style.display='none';
-  var chatBtn = document.getElementById('btn-chat-open');
-  if(chatBtn) chatBtn.style.display='none';
-  G.chatOpen = false;
-  var chatMsgs = document.getElementById('chat-messages');
-  if(chatMsgs) chatMsgs.innerHTML='<div class="msg-ai">Je connais ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>';
+  document.getElementById('chat-body').style.display='none';
+  document.getElementById('chat-icon').textContent='▼';
+  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
 
 }
 function setState(s){
@@ -426,16 +438,8 @@ function analyzeEmail(){
     G.mailSubject = Office.context.mailbox.item.subject||'';
     G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress:'';
     G.mailBody    = result.value||'';
-    // Lire les PJ depuis Outlook
-    var item = Office.context.mailbox.item;
-    if(item.attachments && item.attachments.length>0){
-      setLoadingMsg('Lecture des pièces jointes…','');
-      loadOutlookAttachments(item.attachments, function(){
-        runAnalysis();
-      });
-    } else {
-      runAnalysis();
-    }
+    // PJ non accessibles sur Exchange on-premise — upload manuel après analyse
+    runAnalysis();
   });
 }
 
@@ -502,6 +506,96 @@ function analyzeTest(){
 function setLoadingMsg(msg, sub){
   document.getElementById('loading-msg').textContent  = msg;
   document.getElementById('loading-sub').textContent  = sub||'';
+}
+
+// ── GESTION PJ MANUELLES ────────────────────────────────
+function handlePJUpload(input){
+  if(!input.files||!input.files.length) return;
+  var list = document.getElementById('pj-list');
+  var btn  = document.getElementById('pj-analyse-btn');
+  Array.from(input.files).forEach(function(f){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var b64  = e.target.result.split(',')[1];
+      var mime = f.type||'image/jpeg';
+      G.attachments.photos.push({data:b64, mediaType:mime, name:f.name});
+      G.pjStatus.photo = true;
+      var row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;background:#f0faf3;border:1px solid #a8d5b5;border-radius:5px;';
+      row.innerHTML='<span style="color:#1e7e34;font-weight:600">✓</span><span style="color:#555;flex:1">'+f.name+'</span>';
+      list.appendChild(row);
+      var count = G.attachments.photos.length;
+      var cEl = document.getElementById('pj-count');
+      if(cEl) cEl.textContent = count + ' fichier'+(count>1?'s':'');
+      if(btn) btn.style.display='block';
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function analyserPJManuelles(){
+  var btn = document.getElementById('pj-analyse-btn');
+  if(btn){ btn.textContent='Analyse en cours…'; btn.disabled=true; }
+
+  var allImages = G.attachments.photos;
+  if(!allImages.length) return;
+
+  // Construire prompt spécifique PJ
+  var defautDecrit = G.data ? (G.data.designation_piece||G.data.resume||'') : '';
+  var pjPrompt = 'Tu as deja analyse ce dossier SAV. Voici les pieces jointes.\n' +
+    'Defaut declare : ' + defautDecrit + '\n\n' +
+    'Pour chaque image numerotee ci-dessous :\n' +
+    '- TICKET_FACTURE : document prouvant un achat (ticket, facture, bon commande, mandatement)\n' +
+    '- NOTICE : schema ou plan avec pieces indiquees\n' +
+    '- PHOTO_DEFAUT : photo du produit ou defaut\n\n' +
+    'Pour les photos : le defaut est-il visible ? Cherche affaissement, plis, compression.\n' +
+    'Si incertain : note a verifier physiquement.\n' +
+    'analyse_photos ne doit pas etre null.\n\n' +
+    'Reponds en JSON : {ticket_present:bool, analyse_pj:[{type,description}], analyse_photos:string, defaut_visible:bool}';
+
+
+  var contentParts = [{type:'text', text:pjPrompt}];
+
+  allImages.forEach(function(item, idx){
+    contentParts.push({type:'text', text:'[Image '+(idx+1)+' — '+item.name+']'});
+    contentParts.push({type:'image', source:{type:'base64', media_type:item.mediaType, data:item.data}});
+  });
+
+  callClaudeRaw([{role:'user', content:contentParts}], 1000, function(json){
+    try{
+      var cleaned = json.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'').trim();
+      var pjData = JSON.parse(cleaned);
+
+      // Mettre à jour G.data avec les résultats PJ
+      if(G.data){
+        if(typeof pjData.ticket_present !== 'undefined') G.pjStatus.ticket = pjData.ticket_present;
+        if(pjData.analyse_pj) G.data.analyse_pj = pjData.analyse_pj;
+        if(pjData.analyse_photos) G.data.analyse_photos = pjData.analyse_photos;
+        if(typeof pjData.defaut_visible !== 'undefined') G.data.defaut_visible = pjData.defaut_visible;
+      }
+
+      // Mettre à jour l'affichage
+      var pjBlock=document.getElementById('pj-status-block'); if(pjBlock) pjBlock.style.display='block';
+      renderPJStatus(G.data);
+
+      // Mettre à jour le champ analyse photos dans le récap
+      var items = document.querySelectorAll('.recap-item-full');
+      items.forEach(function(item){
+        var label = item.querySelector('.ri-label');
+        if(label && label.textContent === 'Analyse photos'){
+          var val = item.querySelector('.ri-val');
+          if(val && pjData.analyse_photos){
+            val.textContent = pjData.analyse_photos;
+            val.className = 'ri-val';
+          }
+        }
+      });
+
+      if(btn){ btn.textContent='✓ Analysé'; btn.style.background='#1e7e34'; }
+    }catch(e){
+      if(btn){ btn.textContent='Erreur — réessayer'; btn.disabled=false; btn.style.background='#b91c1c'; }
+    }
+  });
 }
 
 // ── ANALYSE COMMUNE ──────────────────────────────────────
