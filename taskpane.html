@@ -335,10 +335,11 @@ var G = {
   data:null, client:null, mode:null,
   csvLine:null, accordNum:null,
   chatHistory:[], chatOpen:false,
-  mailBody:'', mailSubject:'', mailSender:'',
+  mailBody:'', mailSubject:'', mailSender:'', mailDate:null,
   attachments:{ ticket:null, notice:null, photos:[] },
   pjStatus:{ ticket:false, notice:false, photo:false },
-  pjIgnored:{ notice:false, photo:false }
+  pjIgnored:{ notice:false, photo:false },
+  pjAccessDenied: false
 };
 
 // ── OFFICE INIT ──────────────────────────────────────────
@@ -375,9 +376,13 @@ function resetToIdle(){
      pjIgnored:{notice:false,photo:false}};
   setState('idle');
   document.getElementById('action-bar').style.display='none';
-  document.getElementById('chat-body').style.display='none';
-  document.getElementById('chat-icon').textContent='▼';
-  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
+  var chatWin = document.getElementById('chat-window');
+  if(chatWin) chatWin.style.display='none';
+  var chatBtn = document.getElementById('btn-chat-open');
+  if(chatBtn) chatBtn.style.display='none';
+  G.chatOpen = false;
+  var chatMsgs = document.getElementById('chat-messages');
+  if(chatMsgs) chatMsgs.innerHTML='<div class="msg-ai">Je connais ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>';
 
 }
 function setState(s){
