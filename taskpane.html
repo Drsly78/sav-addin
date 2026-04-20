@@ -786,12 +786,15 @@ function runAnalysis(){
       if(d.ref_produit && d.ref_produit.length > 3 && d.ref_produit !== 'null'){
         setLoadingMsg('Consultation notice produit…','');
         var noticeMsg = [{role:'user', content:[{type:'text', text:
-          'Ref produit: ' + d.ref_produit + ' — Problème: ' + (d.designation_piece||d.resume||'') +
-          '\n\nREGARDE LA NOTICE CI-JOINTE et réponds avec UNIQUEMENT ce format : "X × N"' +
-          '\nX = lettre de la pièce, N = quantité ou ? si non précisée dans le mail.' +
-          '\nEXEMPLES VALIDES : "G × 4" / "E × 2" / "G × ?" — RIEN D\'AUTRE.' +
-          '\nPAS de phrase. PAS d\'explication. Juste "X × N".' +
-          '\nSi impossible à identifier : NON_APPLICABLE'
+          'Ref produit: ' + d.ref_produit + '\nProblème décrit dans le mail: ' + (d.designation_piece||d.resume||'') +
+          '\n\nREGARDE LA NOTICE CI-JOINTE.' +
+          '\nIdentifie la lettre de la pièce concernée par le problème.' +
+          '\nPour la quantité N : cherche dans le texte du mail si le client précise COMBIEN de pièces sont impactées.' +
+          '\n- Si le mail dit un chiffre précis (ex: "2 coussins") → N = ce chiffre' +
+          '\n- Si le mail dit "tous" ou "l\'ensemble" → N = quantité totale de la notice' +
+          '\n- Si le mail ne précise PAS combien sont impactés → N = ?' +
+          '\nFormat OBLIGATOIRE : "X × N" — RIEN D\'AUTRE. Pas de phrase, pas d\'explication.' +
+          '\nExemples : "G × 2" / "G × 4" / "G × ?" — Si impossible : NON_APPLICABLE'
         }]}];
         callClaudeRaw(noticeMsg, 150, function(noticeReply){
           var r = (noticeReply||'').trim();
@@ -844,6 +847,13 @@ function runAnalysis(){
         imagesInfo = '\n\nIMAGES UPLOADEES (' + G.attachments.photos.length + ') : ' +
           G.attachments.photos.map(function(p){ return p.name; }).join(', ') +
           ' — Ces images ont ete analysees et tu peux repondre a des questions dessus.';
+      }
+      // Indiquer si une notice a été consultée
+      if(d.designation_piece && d.designation_piece.indexOf('(notice)') >= 0){
+        imagesInfo += '\n\nNOTICE TECHNIQUE CONSULTEE : La notice du produit ' + d.ref_produit +
+          ' a ete chargee automatiquement depuis la bibliotheque.' +
+          '\nPiece identifiee : ' + d.designation_piece +
+          '\nTu connais la structure du produit et les pieces qui le composent.';
       }
 
       // Construire un contexte riche pour le chat
