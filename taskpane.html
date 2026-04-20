@@ -446,11 +446,27 @@ function loadOutlookAttachments(attachments, cb){
     pending++;
     Office.context.mailbox.item.getAttachmentContentAsync(att.id, function(res){
       if(res.status===Office.AsyncResultStatus.Succeeded){
-        var b64  = res.value.content;
+        var raw  = res.value.content;
+        var fmt  = res.value.format || 'unknown';
         var mime = isImage ? 'image/jpeg' : 'application/pdf';
-        // Classer toutes les images/PDF comme photos pour que l'IA les analyse
-        // L'IA déterminera elle-même ce qui est ticket, notice ou photo
-        imageAtts.push({data:b64, mediaType:mime, name:att.name});
+        // Nettoyer le base64 selon le format
+        var b64 = raw;
+        if(fmt === 'base64') {
+          b64 = raw; // déjà bon
+        } else if(raw && raw.indexOf('base64,') > -1) {
+          b64 = raw.split('base64,')[1];
+        } else if(raw && raw.indexOf(',') > -1 && raw.indexOf('data:') === 0) {
+          b64 = raw.split(',')[1];
+        }
+        // Log debug — visible dans console F12
+        console.log('PJ Outlook:', att.name, 'format:', fmt, 'taille b64:', b64 ? b64.length : 0, 'debut:', b64 ? b64.substring(0,20) : 'vide');
+        if(b64 && b64.length > 100){
+          imageAtts.push({data:b64, mediaType:mime, name:att.name});
+        } else {
+          console.warn('PJ ignorée (b64 vide ou trop court):', att.name);
+        }
+      } else {
+        console.error('Erreur lecture PJ:', att.name, res.error);
       }
       pending--;
       if(pending===0){
