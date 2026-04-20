@@ -223,20 +223,35 @@
         <span id="statut-pill"></span>
       </div>
 
-      <!-- UPLOAD PJ MANUEL -->
-      <div id="pj-upload-section" style="margin:8px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">
-        <div style="background:#f5f5f5;padding:7px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between">
-          <span>Pièces jointes</span>
-          <span id="pj-count" style="font-size:11px;color:#888;font-weight:400"></span>
-        </div>
-        <div style="padding:10px 12px">
-          <div id="pj-drop" onclick="document.getElementById('pj-input').click()" style="border:1.5px dashed #d0d0d0;border-radius:6px;padding:12px;text-align:center;cursor:pointer;background:#fafafa" onmouseover="this.style.borderColor='#0078d4';this.style.background='#f0f7ff'" onmouseout="this.style.borderColor='#d0d0d0';this.style.background='#fafafa'">
+      <!-- PIÈCES JOINTES -->
+      <div style="margin:8px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">
+        <div style="background:#f5f5f5;padding:7px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em">Pièces jointes</div>
+        <div style="padding:8px 10px;display:flex;flex-direction:column;gap:5px">
+
+          <!-- Boutons demande PJ manquantes -->
+          <button onclick="demanderTicket()" style="width:100%;padding:7px 10px;background:#fff8e1;color:#b45309;border:1px solid #fcd34d;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+            📄 Demander le ticket / facture
+          </button>
+          <button onclick="demanderNotice()" style="width:100%;padding:7px 10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+            📋 Demander la notice annotée
+          </button>
+          <button onclick="demanderPhotos()" style="width:100%;padding:7px 10px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+            📷 Demander des photos du défaut
+          </button>
+
+          <!-- Séparateur -->
+          <div style="height:1px;background:#e8e8e8;margin:2px 0"></div>
+
+          <!-- Upload pour analyse IA -->
+          <div style="font-size:11px;color:#888;margin-bottom:2px">Uploader pour analyse IA ou discussion avec Claude</div>
+          <div onclick="document.getElementById('pj-input').click()" style="border:1.5px dashed #d0d0d0;border-radius:6px;padding:10px;text-align:center;cursor:pointer;background:#fafafa" onmouseover="this.style.borderColor='#0078d4';this.style.background='#f0f7ff'" onmouseout="this.style.borderColor='#d0d0d0';this.style.background='#fafafa'">
             <input type="file" id="pj-input" accept="image/*,.pdf" multiple style="display:none" onchange="handlePJUpload(this)"/>
             <div style="font-size:12px;color:#888">Glisser ou cliquer pour ajouter</div>
-            <div style="font-size:11px;color:#aaa;margin-top:2px">Ticket + notice + photos du défaut</div>
+            <div style="font-size:11px;color:#aaa;margin-top:2px">Photos, ticket, notice…</div>
           </div>
-          <div id="pj-list" style="margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
-          <button id="pj-analyse-btn" style="display:none;width:100%;margin-top:8px;padding:8px;background:#0078d4;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" onclick="analyserPJManuelles()">Analyser les pièces jointes</button>
+          <div id="pj-list" style="display:flex;flex-direction:column;gap:3px"></div>
+          <button id="pj-analyse-btn" style="display:none;width:100%;margin-top:4px;padding:8px;background:#0078d4;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" onclick="analyserPJManuelles()">Analyser avec IA</button>
+
         </div>
       </div>
 
@@ -391,9 +406,10 @@ function resetToIdle(){
      pjIgnored:{notice:false,photo:false}};
   setState('idle');
   document.getElementById('action-bar').style.display='none';
-  document.getElementById('chat-body').style.display='none';
-  document.getElementById('chat-icon').textContent='▼';
-  document.getElementById('chat-messages').innerHTML='<div class="msg-ai">Je connais ce dossier. Tu peux me demander de rédiger une réponse, analyser un point précis, ou poser n\'importe quelle question.</div>';
+  var cw=document.getElementById('chat-window'); if(cw) cw.style.display='none';
+  var cb=document.getElementById('btn-chat-open'); if(cb) cb.style.display='none';
+  G.chatOpen=false;
+  var cm=document.getElementById('chat-messages'); if(cm) cm.innerHTML='<div class="msg-ai">Je connais ce dossier. Pose-moi une question ou demande-moi de rédiger un message.</div>';
 
 }
 function setState(s){
@@ -790,8 +806,16 @@ function runAnalysis(){
         }
       } catch(e2){}
 
+      // Indiquer les images uploadées dans le contexte chat
+      var imagesInfo = '';
+      if(G.attachments.photos && G.attachments.photos.length > 0){
+        imagesInfo = '\n\nIMAGES UPLOADEES (' + G.attachments.photos.length + ') : ' +
+          G.attachments.photos.map(function(p){ return p.name; }).join(', ') +
+          ' — Ces images ont ete analysees et tu peux repondre a des questions dessus.';
+      }
+
       // Construire un contexte riche pour le chat
-      var pjContext = '';
+      var pjContext = imagesInfo;
       if(d.analyse_pj && d.analyse_pj.length){
         pjContext = '\n\nPIECES JOINTES ANALYSEES :\n' + d.analyse_pj.map(function(p,i){
           return '  Image '+(i+1)+' — '+p.type+' : '+p.description;
@@ -1183,6 +1207,20 @@ function validerCSVSemicolon(){
 }
 
 // ── RELANCES ─────────────────────────────────────────────
+function demanderNotice(){
+  var dossier = G.data && G.data.numero_dossier ? G.data.numero_dossier : '';
+  var ref = G.data && G.data.ref_produit ? G.data.ref_produit : '';
+  var texte = 'Bonjour,\n\nConcernant le dossier ' + dossier + (ref ? ' (ref. ' + ref + ')' : '') + ', nous aurions besoin de la notice du produit annotee indiquant les pieces concernees avec les quantites.\n\nMerci de nous la faire parvenir.\n\nCordialement,\nService SAV';
+  copyAndShow(texte, 'btn-relance-pj');
+}
+
+function demanderPhotos(){
+  var dossier = G.data && G.data.numero_dossier ? G.data.numero_dossier : '';
+  var probleme = G.data && G.data.designation_piece ? G.data.designation_piece : 'le defaut constate';
+  var texte = 'Bonjour,\n\nConcernant le dossier ' + dossier + ', pourriez-vous nous transmettre des photos du defaut constate (' + probleme + ') ?\n\nMerci de nous les faire parvenir.\n\nCordialement,\nService SAV';
+  copyAndShow(texte, 'btn-relance-pj');
+}
+
 function demanderTicket(){
   var corps = "Bonjour,\n\nNous avons bien reçu votre demande de SAV concernant le dossier "+(G.data&&G.data.numero_dossier||'')+".\n\nCependant, le traitement de votre dossier nécessite obligatoirement la transmission du ticket de caisse ou de la facture d'achat.\n\nMerci de nous le faire parvenir dès que possible afin que nous puissions traiter votre demande.\n\nCordialement,\nService SAV";
   copyAndShow(corps, 'btn-relance-ticket');
