@@ -598,7 +598,10 @@ function runAnalysis(){
     lines.push("Decris precisement ce que tu vois et dis si cela correspond au defaut");
     lines.push("declare dans le mail.");
     lines.push("");
-    lines.push("ticket_present = true si au moins une image est un document prouvant");
+    lines.push("analyse_photos : decris TOUJOURS ce que tu vois sur les photos du produit, meme brievement.");
+  lines.push("  Meme si le defaut n'est pas clairement visible, decris l'etat general du produit.");
+  lines.push("  Ne jamais laisser ce champ null s'il y a des images.");
+  lines.push("ticket_present = true si au moins une image est un document prouvant");
     lines.push("un achat, quelle que soit sa forme.");
     lines.push("");
   }
@@ -740,7 +743,7 @@ function renderResult(d){
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
     {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true},
-    {label:'Analyse photos',    val:d.analyse_photos||null, full:true}
+    {label:'Analyse photos',    val:d.analyse_photos||(G.attachments&&G.attachments.photos&&G.attachments.photos.length?'Images reçues — aucun défaut décrit':null), full:true}
   ];
   document.getElementById('recap-grid').innerHTML = items.map(function(item){
     var cls = item.full ? 'recap-item-full':'recap-item';
