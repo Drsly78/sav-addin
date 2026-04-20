@@ -786,29 +786,26 @@ function runAnalysis(){
       if(d.ref_produit && d.ref_produit.length > 3 && d.ref_produit !== 'null'){
         setLoadingMsg('Consultation notice produit…','');
         var noticeMsg = [{role:'user', content:[{type:'text', text:
-          'Dossier SAV — Ref: ' + d.ref_produit + ' — Problème: ' + (d.designation_piece||d.resume||'') +
-          '\nEn regardant la notice technique ci-jointe, identifie la pièce exacte à remplacer.' +
-          '\nRÈGLES DE RÉPONSE STRICTES :' +
-          '\n- Format OBLIGATOIRE : "X × N" (ex: G × 4, E × 2, B × 1)' +
-          '\n- X = lettre de la pièce dans la notice' +
-          '\n- N = quantité TOTALE pour l\'ensemble du produit (ex: canapé + 2 fauteuils = total)' +
-          '\n- N = quantité explicitement mentionnée dans le mail OU quantité totale du produit si "tous les coussins/pièces" est dit' +
-          '\n- Si le mail NE PRÉCISE PAS combien de pièces sont impactées (pas de chiffre, pas de "tous"), mets ?: "G × ?"' +
-          '\n- Rien d\'autre — pas d\'explication, pas de phrase, juste "X × N" ou "X × ?"' +
-          '\nSi la notice ne permet pas d\'identifier la pièce : NON_APPLICABLE'
+          'Ref produit: ' + d.ref_produit + ' — Problème: ' + (d.designation_piece||d.resume||'') +
+          '\n\nREGARDE LA NOTICE CI-JOINTE et réponds avec UNIQUEMENT ce format : "X × N"' +
+          '\nX = lettre de la pièce, N = quantité ou ? si non précisée dans le mail.' +
+          '\nEXEMPLES VALIDES : "G × 4" / "E × 2" / "G × ?" — RIEN D\'AUTRE.' +
+          '\nPAS de phrase. PAS d\'explication. Juste "X × N".' +
+          '\nSi impossible à identifier : NON_APPLICABLE'
         }]}];
         callClaudeRaw(noticeMsg, 150, function(noticeReply){
           var r = (noticeReply||'').trim();
           if(r && r !== 'NON_APPLICABLE' && r.length > 1){
-            // Ajouter mention source notice dans le récap
-            var labelNotice = r + ' (notice)';
+            // Extraire juste "X × N" même si Claude a ajouté du texte
+            var matchPiece = r.match(/([A-Z])\s*[×x]\s*(\d+|\?)/);
+            var cleanPiece = matchPiece ? matchPiece[0] : r.substring(0, 10);
+            var labelNotice = cleanPiece + ' (notice)';
             G.data.designation_piece = labelNotice;
             d.designation_piece = labelNotice;
             // Signaler quantité inconnue dans suggestion
-            if(r.indexOf('?') >= 0){
-              var pieceId = r.split('×')[0].trim();
-              var note = ' — Préciser combien de pièces ' + pieceId + ' sont à remplacer (non indiqué dans le mail)';
-              d.raison_suggestion = (d.raison_suggestion||'') + note;
+            if(cleanPiece.indexOf('?') >= 0){
+              var pieceId = cleanPiece.split(/[×x]/)[0].trim();
+              d.raison_suggestion = (d.raison_suggestion||'') + ' — Demander combien de pièces ' + pieceId + ' sont impactées';
               G.data.raison_suggestion = d.raison_suggestion;
             }
           }
