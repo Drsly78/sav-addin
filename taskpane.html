@@ -726,7 +726,7 @@ function renderResult(d){
     {label:'N° de dossier',     val:d.numero_dossier,     full:false},
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
-    {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true}
+    {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion+(d.analyse_photos?' | Photos : '+d.analyse_photos:''), full:true, suggest:true}
   ];
   document.getElementById('recap-grid').innerHTML = items.map(function(item){
     var cls = item.full ? 'recap-item-full':'recap-item';
@@ -971,7 +971,14 @@ function incrementAccord(client){
 }
 
 // ── CSV ──────────────────────────────────────────────────
-function getv(id){ var el=document.getElementById(id); return el?el.value||'':(id==='f_accord'&&G.accordNum?G.accordNum:''); }
+function getv(id){
+  var el = document.getElementById(id);
+  if(el) return el.value||'';
+  if(id==='f_accord' && G.accordNum) return G.accordNum;
+  // Fallback pour les champs affichés en lecture seule (pas d'input)
+  if(id==='f_enseigne' && G.data) return G.data.nom_enseigne||'';
+  return '';
+}
 
 function updateCSV(){
   if(!G.mode||!G.data) return;
