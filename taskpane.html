@@ -345,8 +345,8 @@
 
   <!-- ACTION BAR -->
   <div class="action-bar" id="action-bar" style="display:none">
-    <button class="btn btn-warn"     id="btn-relance-ticket" style="display:none"></button>
-    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none"></button>
+    <button id="btn-relance-ticket" style="display:none"></button>
+    <button id="btn-relance-pj"     style="display:none"></button>
     <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Copier demande informations</button>
     <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
     <button class="btn btn-secondary" id="btn-csv-fallback"  style="display:none" onclick="validerCSVSemicolon()">Copier format CSV (;) — si Ctrl+V ne fonctionne pas</button>
@@ -998,8 +998,8 @@ function renderActionBar(){
   var infoOk    = !G.data || !G.data.questions || G.data.questions.length===0;
   var modeOk    = !!G.mode;
 
-  document.getElementById('btn-relance-ticket').style.display = !ticketOk                    ? 'block':'none';
-  document.getElementById('btn-relance-pj').style.display     = ticketOk && (!noticeOk||!photoOk) && !(G.pjIgnored.notice&&G.pjIgnored.photo) ? 'block':'none';
+  document.getElementById('btn-relance-ticket').style.display = 'none';
+  document.getElementById('btn-relance-pj').style.display     = 'none'; var _unused = ticketOk && (!noticeOk||!photoOk) && !(G.pjIgnored.notice&&G.pjIgnored.photo) ? 'block':'none';
   document.getElementById('btn-relance-info').style.display   = ticketOk && !infoOk          ? 'block':'none';
   document.getElementById('btn-valider').style.display        = ticketOk && modeOk           ? 'block':'none';
 }
