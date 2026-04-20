@@ -229,13 +229,13 @@
         <div style="padding:8px 10px;display:flex;flex-direction:column;gap:5px">
 
           <!-- Boutons demande PJ manquantes -->
-          <button onclick="demanderTicket()" style="width:100%;padding:7px 10px;background:#fff8e1;color:#b45309;border:1px solid #fcd34d;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+          <button id="pj-btn-ticket" onclick="pjBtnClick(this,'ticket')" style="width:100%;padding:7px 10px;background:#fff8e1;color:#b45309;border:1px solid #fcd34d;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s">
             📄 Demander le ticket / facture
           </button>
-          <button onclick="demanderNotice()" style="width:100%;padding:7px 10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+          <button id="pj-btn-notice" onclick="pjBtnClick(this,'notice')" style="width:100%;padding:7px 10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s">
             📋 Demander la notice annotée
           </button>
-          <button onclick="demanderPhotos()" style="width:100%;padding:7px 10px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left">
+          <button id="pj-btn-photos" onclick="pjBtnClick(this,'photos')" style="width:100%;padding:7px 10px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;text-align:left;transition:all .2s">
             📷 Demander des photos du défaut
           </button>
 
@@ -345,8 +345,8 @@
 
   <!-- ACTION BAR -->
   <div class="action-bar" id="action-bar" style="display:none">
-    <button class="btn btn-danger"   id="btn-relance-ticket" style="display:none" onclick="demanderTicket()">Copier demande ticket / facture</button>
-    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Copier demande pièces jointes</button>
+    <button class="btn btn-warn"     id="btn-relance-ticket" style="display:none"></button>
+    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none"></button>
     <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Copier demande informations</button>
     <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
     <button class="btn btn-secondary" id="btn-csv-fallback"  style="display:none" onclick="validerCSVSemicolon()">Copier format CSV (;) — si Ctrl+V ne fonctionne pas</button>
@@ -1207,6 +1207,27 @@ function validerCSVSemicolon(){
 }
 
 // ── RELANCES ─────────────────────────────────────────────
+function pjBtnClick(btn, type){
+  var origText = btn.innerHTML;
+  var origBg   = btn.style.background;
+  var origColor = btn.style.color;
+  var origBorder = btn.style.border;
+  if(type==='ticket') demanderTicket();
+  else if(type==='notice') demanderNotice();
+  else if(type==='photos') demanderPhotos();
+  // Effet visuel
+  btn.innerHTML = '✓ Copié !';
+  btn.style.background = '#e6f4ea';
+  btn.style.color = '#1e7e34';
+  btn.style.border = '1px solid #a8d5b5';
+  setTimeout(function(){
+    btn.innerHTML = origText;
+    btn.style.background = origBg;
+    btn.style.color = origColor;
+    btn.style.border = origBorder;
+  }, 2000);
+}
+
 function demanderNotice(){
   var dossier = G.data && G.data.numero_dossier ? G.data.numero_dossier : '';
   var ref = G.data && G.data.ref_produit ? G.data.ref_produit : '';
@@ -1289,34 +1310,102 @@ function sendChat(){
   msgs.scrollTop=msgs.scrollHeight;
   G.chatHistory.push({role:'user',content:msg});
 
-  var sys = "Tu es un assistant SAV expert. Contexte : client="+(G.client==='su'?'Système U':'Intersport')+
-    ", statut="+((G.data&&G.data.statut)||'?')+
-    ", traitement="+(G.mode==='sav'?'envoi pièce':G.mode==='remb'?'remboursement':'non choisi')+".\n\n"+
-    "Quand tu rédiges un email ou une réponse à envoyer au magasin :\n"+
-    "- Commence par 'Bonjour,' sur sa propre ligne\n"+
-    "- Corps structuré avec paragraphes clairs\n"+
-    "- Termine par 'Cordialement,\\nService SAV'\n"+
-    "- Utilise des tirets pour les listes\n\n"+
-    "Pour les réponses courtes et analyses : sois concis et direct.";
+  var champsActuels = '';
+  try{
+    var fields = ['f_ref','f_designation','f_enseigne','f_depville','f_cnb','f_date_recep'];
+    fields.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.value) champsActuels += id.replace('f_','') + ':' + el.value + ' | ';
+    });
+  }catch(e2){}
+
+  var pjInfo = '';
+  if(G.data && G.data.analyse_pj && G.data.analyse_pj.length){
+    pjInfo = '\nPJ : ' + G.data.analyse_pj.map(function(p){return p.type+': '+p.description;}).join(' | ');
+  }
+  if(G.data && G.data.analyse_photos) pjInfo += '\nPhotos : ' + G.data.analyse_photos;
+  if(G.attachments && G.attachments.photos && G.attachments.photos.length){
+    pjInfo += '\nImages uploadees (' + G.attachments.photos.length + ') : ' + G.attachments.photos.map(function(p){return p.name;}).join(', ');
+  }
+
+  var sys =
+    "Tu es un assistant SAV interne pour une entreprise qui distribue des produits bazar (Systeme U) et accessoires sport (Intersport).\n" +
+    "Tu aides l'operatrice SAV a analyser les dossiers, repondre a ses questions, et rediger des reponses aux magasins.\n\n" +
+    "DEUX MODES :\n" +
+    "1. CONVERSATION : si la question est une analyse, un avis, une verification — reponds directement et simplement.\n" +
+    "   Ex: 'est-ce que le defaut est visible ?' / 'ca ressemble a quoi ?' / 'c'est pris en garantie ?'\n" +
+    "2. REDACTION : si on te demande de rediger, formuler, ecrire une reponse a envoyer au magasin — redige un email professionnel complet.\n" +
+    "   Ex: 'redige une reponse' / 'demande des precisions' / 'refuse la prise en charge' / 'confirme l'envoi'\n" +
+    "   En mode redaction : commence par 'Bonjour,' et termine par 'Cordialement,\\nService SAV Flaudis'.\n\n" +
+
+    "DOSSIER EN COURS :\n" +
+    "Client : " + (G.client==='su'?'Systeme U':'Intersport') + "\n" +
+    "Enseigne : " + ((G.data&&G.data.nom_enseigne)||'?') + "\n" +
+    "Reference : " + ((G.data&&G.data.ref_produit)||'?') + "\n" +
+    "Probleme : " + ((G.data&&G.data.designation_piece)||'?') + "\n" +
+    "N° dossier : " + ((G.data&&G.data.numero_dossier)||'?') + "\n" +
+    "Traitement : " + (G.mode==='sav'?'Envoi piece':G.mode==='remb'?'Remboursement':'Non choisi') + "\n" +
+    pjInfo + "\n\n" +
+
+    "QUAND TU REDIGES UNE REPONSE MAIL A ENVOYER AU MAGASIN :\n" +
+    "- Ton role est celui d'un responsable SAV professionnel et cordial\n" +
+    "- Commence par 'Bonjour,' puis reference le dossier des la premiere phrase\n" +
+    "- Sois clair, concis, et professionnel\n" +
+    "- Termine par 'Cordialement,\\nService SAV Flaudis'\n\n" +
+
+    "TYPES DE REPONSES QUE TU PEUX REDIGER :\n" +
+    "- Demande de precisions sur le defaut ou la cause du probleme\n" +
+    "- Refus prise en charge (hors garantie, defaut non couvert, mauvaise utilisation)\n" +
+    "- Confirmation envoi piece avec delai estimatif\n" +
+    "- Demande de retour produit pour expertise\n" +
+    "- Accord ou refus de remboursement avec justification\n" +
+    "- Relance pour pieces jointes manquantes\n\n" +
+
+    "Pour les questions internes ou analyses : reponds de facon directe et concise.";
 
   callClaudeChat(sys, G.chatHistory, function(reply){
     loadDiv.className='msg-ai';
     loadDiv.innerHTML = formatChatReply(reply);
+    // Ajouter bouton copier
+    var wrap = loadDiv.querySelector('.chat-copy-btn-wrap');
+    if(wrap){
+      var copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copier';
+      copyBtn.style.cssText = 'margin-top:5px;padding:3px 10px;background:none;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;color:#666;cursor:pointer';
+      (function(r){ copyBtn.onclick = function(){ chatCopy(copyBtn, r); }; })(reply);
+      wrap.appendChild(copyBtn);
+    }
     G.chatHistory.push({role:'assistant',content:reply});
     msgs.scrollTop=msgs.scrollHeight;
   });
 }
 
 function formatChatReply(text){
-  return text
+  var formatted = text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/^### (.+)$/gm,'<strong>$1</strong>')
-    .replace(/^— (.+)$/gm,'<li>$1</li>')
     .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, function(m){ return '<ul>'+m+'</ul>'; })
-    .replace(/\n\n/g,'</p><p style="margin-top:6px">')
+    .replace(/(<li>[\s\S]*?<\/li>)/g,function(m){return '<ul>'+m+'</ul>';})
     .replace(/\n/g,'<br>');
+  var copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Copier';
+  copyBtn.setAttribute('data-text', text);
+  copyBtn.style.cssText = 'margin-top:6px;padding:4px 10px;background:none;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;color:#555;cursor:pointer;display:block';
+  copyBtn.onclick = function(){ chatCopy(this, this.getAttribute('data-text')); };
+  return '<div class="chat-reply-text">' + formatted + '</div><div class="chat-copy-btn-wrap"></div>';
+}
+
+
+function chatCopy(btn, text){
+  var decoded = text;
+  execCopy(decoded, function(){
+    var orig = btn.textContent;
+    btn.textContent = '✓ Copié';
+    btn.style.background = '#e6f4ea';
+    btn.style.color = '#1e7e34';
+    setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.style.color=''; }, 2000);
+  });
 }
 
 // ── API CLAUDE ───────────────────────────────────────────
