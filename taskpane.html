@@ -403,6 +403,19 @@ function analyzeEmail(){
   }
   setState('loading');
   setLoadingMsg('Lecture du mail…','');
+
+  // Lire la date du mail de façon synchrone avant tout
+  G.mailDate = null;
+  try {
+    var rawDate = Office.context.mailbox.item.dateTimeCreated;
+    if(rawDate){
+      var dm = new Date(rawDate);
+      G.mailDate = String(dm.getDate()).padStart(2,'0') + '/' +
+                   String(dm.getMonth()+1).padStart(2,'0') + '/' +
+                   dm.getFullYear();
+    }
+  } catch(eDate){}
+
   Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function(result){
     if(result.status!==Office.AsyncResultStatus.Succeeded){ showError("Impossible de lire le mail."); return; }
     G.mailSubject = Office.context.mailbox.item.subject||'';
@@ -726,7 +739,8 @@ function renderResult(d){
     {label:'N° de dossier',     val:d.numero_dossier,     full:false},
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
-    {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion+(d.analyse_photos?' | Photos : '+d.analyse_photos:''), full:true, suggest:true}
+    {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true},
+    {label:'Analyse photos',    val:d.analyse_photos||null, full:true}
   ];
   document.getElementById('recap-grid').innerHTML = items.map(function(item){
     var cls = item.full ? 'recap-item-full':'recap-item';
