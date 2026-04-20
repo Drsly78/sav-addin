@@ -330,6 +330,332 @@
 
 </div>
 
+</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;font-size:13px;background:#f5f5f5;color:#1a1a1a}
+
+    /* CONFIG */
+    #screen-config{padding:20px}
+    #screen-config h2{font-size:15px;font-weight:600;margin-bottom:6px}
+    #screen-config p{font-size:12px;color:#666;margin-bottom:12px;line-height:1.5}
+    .cfg-label{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+    #screen-config input{width:100%;padding:8px 10px;border:1px solid #d0d0d0;border-radius:6px;font-size:13px;margin-bottom:10px}
+    #screen-config input:focus{outline:none;border-color:#0078d4}
+    .cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .cfg-row input{margin-bottom:0}
+
+    /* MAIN */
+    #screen-main{display:none;flex-direction:column;height:100vh}
+    .topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .topbar-title{font-size:13px;font-weight:600}
+    .topbar-btn{font-size:11px;color:#0078d4;background:none;border:none;cursor:pointer;padding:2px 6px}
+    .scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:80px;-webkit-overflow-scrolling:touch}
+
+    /* IDLE */
+    #state-idle{padding:20px 16px}
+    #state-idle p{font-size:12px;color:#666;line-height:1.6;margin-bottom:14px;text-align:center}
+
+
+    .pj-upload-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+    .pj-upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+    .pj-slot{border:1.5px dashed #d0d0d0;border-radius:6px;padding:8px 4px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
+    .pj-slot:hover{border-color:#0078d4}
+    .pj-slot.has-file{border-color:#1e7e34;border-style:solid;background:#f0faf3}
+    .pj-slot.required{border-color:#f0c040}
+    .pj-slot.required.has-file{border-color:#1e7e34}
+    .pj-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .pj-slot-icon{font-size:16px;margin-bottom:3px}
+    .pj-slot-name{font-size:10px;font-weight:600;color:#555;line-height:1.3}
+    .pj-slot-sub{font-size:9px;color:#aaa;margin-top:1px}
+    .pj-slot.required .pj-slot-sub{color:#b45309}
+    .pj-badge-ok{font-size:9px;color:#1e7e34;font-weight:600;margin-top:2px}
+
+    /* LOADING */
+    #state-loading{display:none;padding:50px 16px;text-align:center}
+    .spinner{width:26px;height:26px;border:3px solid #e0e0e0;border-top-color:#0078d4;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #state-loading p{font-size:12px;color:#666}
+    #state-loading .loading-sub{font-size:11px;color:#aaa;margin-top:4px}
+
+    /* RESULT */
+    #state-result{display:none}
+    #state-error{display:none;padding:20px;text-align:center}
+    #state-error p{font-size:12px;color:#b91c1c;line-height:1.5}
+
+    /* CLIENT BADGE */
+    .client-row{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+    .client-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700}
+    .badge-u{background:#e8f0fe;color:#1a56db}
+    .badge-its{background:#fce8d5;color:#c2410c}
+    .badge-unknown{background:#f3f4f6;color:#555}
+    .statut-pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px}
+    .pill-ok{background:#e6f4ea;color:#1e7e34}
+    .pill-warn{background:#fff8e1;color:#b45309}
+    .pill-error{background:#fde8e8;color:#b91c1c}
+
+    /* PJ STATUS */
+    .pj-status{margin:8px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .pj-status-header{background:#f8f8f8;padding:6px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+    .pj-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid #f0f0f0;font-size:12px}
+    .pj-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .pj-dot-ok{background:#1e7e34}
+    .pj-dot-warn{background:#b45309}
+    .pj-dot-error{background:#b91c1c}
+    .pj-item-label{flex:1;color:#1a1a1a}
+    .pj-item-action{font-size:11px;color:#0078d4;cursor:pointer;background:none;border:none;padding:0}
+    .pj-item-ignore{font-size:11px;color:#aaa;cursor:pointer;background:none;border:none;padding:0;margin-left:4px}
+
+    /* RECAP */
+    .recap-card{margin:8px 12px 0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .recap-header{padding:7px 12px;background:#f8f8f8;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em}
+    .recap-resume{padding:9px 12px;font-size:13px;color:#444;line-height:1.5;border-bottom:1px solid #f0f0f0;font-style:italic}
+    .recap-grid{display:grid;grid-template-columns:1fr 1fr}
+    .recap-item{padding:7px 12px;border-bottom:1px solid #f0f0f0;border-right:1px solid #f0f0f0}
+    .recap-item:nth-child(even){border-right:none}
+    .recap-item-full{padding:7px 12px;border-bottom:1px solid #f0f0f0;grid-column:1/-1}
+    .recap-item:last-child,.recap-item-full:last-child{border-bottom:none}
+    .ri-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .ri-val{font-size:12px;color:#1a1a1a;font-weight:500;line-height:1.4}
+    .ri-val.missing{color:#b45309;font-style:italic;font-weight:400}
+    .ri-val.suggest{color:#1a56db;font-weight:600}
+
+    /* PHOTO ANALYSE */
+    .photo-analyse{margin:8px 12px 0;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:9px 12px}
+    .photo-analyse-label{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+    .photo-analyse-text{font-size:12px;color:#1a1a1a;line-height:1.5}
+
+    /* QUESTIONS */
+    .questions-block{margin:8px 12px 0;background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:9px 12px}
+    .questions-title{font-size:11px;color:#b45309;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+    .q-item{font-size:12px;color:#1a1a1a;padding:3px 0;line-height:1.5;display:flex;gap:6px}
+    .q-item:before{content:"–";color:#b45309;flex-shrink:0}
+
+    /* DECISION */
+    .decision-section{margin:10px 12px 0}
+    .decision-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .decision-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .dbtn{padding:11px 8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;text-align:center;transition:all .15s;line-height:1.3}
+    .dbtn-sav{background:#e6f4ea;color:#1e7e34;border-color:#a8d5b5}
+    .dbtn-sav:hover,.dbtn-sav.active{background:#1e7e34;color:#fff;border-color:#1e7e34}
+    .dbtn-remb{background:#fff0f0;color:#b91c1c;border-color:#f5b5b5}
+    .dbtn-remb:hover,.dbtn-remb.active{background:#b91c1c;color:#fff;border-color:#b91c1c}
+    .dbtn-sub{font-size:10px;font-weight:400;display:block;margin-top:2px;opacity:.8}
+
+    /* FORM */
+    .form-section{margin:8px 12px 0;display:flex;flex-direction:column;gap:5px}
+    .form-title{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:4px 0 2px}
+    .field-group{background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:7px 10px}
+    .field-group.required-field{border-color:#f0c040;background:#fffef5}
+    .fl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .fv{font-size:12px;color:#1a1a1a;font-weight:500}
+    .fv.missing{color:#b45309;font-style:italic;font-weight:400}
+    .fi{width:100%;border:none;font-size:12px;color:#1a1a1a;font-family:"Segoe UI",Arial,sans-serif;background:transparent;outline:none;padding:0;font-weight:500}
+    .fi::placeholder{color:#bbb;font-style:italic;font-weight:400}
+    .fi.missing{color:#b45309}
+    select.fi{cursor:pointer}
+
+    /* ACCORD */
+    .accord-block{margin:8px 12px 0;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+    .accord-label{font-size:11px;color:#0078d4;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+    .accord-val{font-size:18px;font-weight:700;color:#0078d4;font-family:monospace;letter-spacing:.06em}
+
+    /* CSV */
+    .csv-block{margin:8px 12px 0;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px}
+    .csv-label{font-size:11px;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+    .csv-preview{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+    .csv-row{display:flex;gap:6px;font-size:11px;align-items:baseline}
+    .csv-col-name{color:#999;min-width:110px;flex-shrink:0}
+    .csv-col-val{color:#1a1a1a;font-weight:500}
+    .csv-col-val.empty{color:#bbb;font-style:italic}
+
+    /* CHAT */
+    .chat-section{margin:10px 12px 0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden}
+    .chat-header{background:#f5f5f5;padding:8px 12px;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+    .chat-messages{background:#fff;max-height:200px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+    .msg-ai{background:#f0f7ff;border:1px solid #cce0f5;border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.6}
+    .msg-ai strong{font-weight:600;color:#0078d4}
+    .msg-ai ul{margin:4px 0 4px 14px}
+    .msg-ai li{margin-bottom:2px}
+    .msg-user{background:#e8f0fe;border:1px solid #c0d4f8;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.5;align-self:flex-end;max-width:88%}
+    .chat-loading{color:#999;font-style:italic;font-size:12px;padding:6px 9px}
+    .chat-input-row{display:flex;gap:5px;padding:7px 8px;border-top:1px solid #e8e8e8;background:#fafafa}
+    .chat-input-row input{flex:1;padding:6px 9px;border:1px solid #d0d0d0;border-radius:6px;font-size:12px;font-family:inherit}
+    .chat-input-row input:focus{outline:none;border-color:#0078d4}
+    .chat-send{padding:6px 11px;background:#0078d4;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;font-weight:500}
+
+    /* ACTION BAR */
+    .action-bar{padding:8px 12px 10px;border-top:1px solid #e8e8e8;background:#fff;display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+    .btn{width:100%;padding:9px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid transparent;text-align:center}
+    .btn-primary{background:#0078d4;color:#fff;border-color:#0078d4}
+    .btn-success{background:#1e7e34;color:#fff;border-color:#1e7e34}
+    .btn-warn{background:#fff8e1;color:#b45309;border-color:#f0c040}
+    .btn-danger{background:#fde8e8;color:#b91c1c;border-color:#f5b5b5}
+    .btn-secondary{background:#f5f5f5;color:#555;border-color:#d0d0d0}
+    .btn:disabled{opacity:.5;cursor:default}
+    .sep{height:1px;background:#e8e8e8;margin:2px 0}
+  </style>
+</head>
+<body>
+
+<!-- ===== CONFIG ===== -->
+<div id="screen-config">
+  <h2>Configuration SAV</h2>
+  <p>Entre ta clé API Claude. Elle est stockée uniquement sur ce PC.</p>
+  <div class="cfg-label">Clé API Claude</div>
+  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."/>
+  <p style="font-size:11px;color:#aaa;margin-top:-6px;margin-bottom:12px">Obtenir une clé sur console.anthropic.com</p>
+  <div class="cfg-label">Prochain n° accord du mois</div>
+  <div class="cfg-row">
+    <div>
+      <div class="cfg-label" style="margin-top:4px">Système U</div>
+      <input type="number" id="next-su" placeholder="1" min="1" value="1"/>
+    </div>
+    <div>
+      <div class="cfg-label" style="margin-top:4px">Intersport</div>
+      <input type="number" id="next-its" placeholder="1" min="1" value="1"/>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#aaa;margin-top:-4px;margin-bottom:14px">Remettre à 1 chaque début de mois</p>
+  <button class="btn btn-primary" onclick="saveConfig()">Enregistrer et démarrer</button>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="screen-main" style="display:none;flex-direction:column;height:100vh">
+  <div class="topbar">
+    <span class="topbar-title">SAV Analyser</span>
+    <div style="display:flex;gap:4px">
+      <button class="topbar-btn" onclick="resetToIdle()">← Nouveau</button>
+      <button class="topbar-btn" onclick="showConfig()">Paramètres</button>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- IDLE -->
+    <div id="state-idle" style="padding:40px 20px;text-align:center">
+      <p style="font-size:12px;color:#666;line-height:1.6;margin-bottom:20px">Ouvre un mail SAV dans Outlook<br/>puis clique sur Analyser.</p>
+      <button class="btn btn-primary" style="max-width:180px;margin:0 auto;display:block" onclick="analyzeEmail()">Analyser ce mail</button>
+    </div>
+
+    <!-- LOADING -->
+    <div id="state-loading">
+      <div class="spinner"></div>
+      <p id="loading-msg">Analyse en cours…</p>
+      <p class="loading-sub" id="loading-sub"></p>
+    </div>
+
+    <!-- RESULT -->
+    <div id="state-result">
+      <div class="client-row">
+        <span id="client-badge"></span>
+        <span id="statut-pill"></span>
+      </div>
+
+      <!-- STATUT PIÈCES JOINTES -->
+      <div class="pj-status" id="pj-status-block">
+        <div class="pj-status-header">Pièces jointes</div>
+        <div id="pj-status-list"></div>
+      </div>
+
+      <!-- RECAP DOSSIER -->
+      <div class="recap-card">
+        <div class="recap-header">Récapitulatif du dossier</div>
+        <div class="recap-resume" id="recap-resume"></div>
+        <div class="recap-grid" id="recap-grid"></div>
+      </div>
+
+      <!-- ANALYSE PHOTOS -->
+      <div class="photo-analyse" id="photo-analyse-block" style="display:none">
+        <div class="photo-analyse-label">Analyse des photos</div>
+        <div class="photo-analyse-text" id="photo-analyse-text"></div>
+      </div>
+
+      <!-- QUESTIONS / INFOS MANQUANTES -->
+      <div id="questions-block" class="questions-block" style="display:none">
+        <div class="questions-title">Informations manquantes</div>
+        <div id="questions-list"></div>
+      </div>
+
+      <!-- DECISION -->
+      <div class="decision-section" id="decision-section" style="display:none">
+        <div class="decision-label">Décision de traitement</div>
+        <div class="decision-btns">
+          <button class="dbtn dbtn-sav" id="btn-sav" onclick="selectMode('sav')">
+            Envoyer une pièce<span class="dbtn-sub">SAV remplacement</span>
+          </button>
+          <button class="dbtn dbtn-remb" id="btn-remb" onclick="selectMode('remb')">
+            Rembourser<span class="dbtn-sub">Avoir / retour</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FORMULAIRE -->
+      <div class="form-section" id="form-section" style="display:none"></div>
+
+      <!-- NUMÉRO D'ACCORD -->
+      <div id="accord-block" class="accord-block" style="display:none">
+        <div>
+          <div class="accord-label">N° d'accord généré</div>
+          <div style="font-size:11px;color:#888;margin-top:1px">S'incrémente à chaque validation</div>
+        </div>
+        <div class="accord-val" id="accord-val"></div>
+      </div>
+
+      <!-- APERÇU CSV -->
+      <div id="csv-block" class="csv-block" style="display:none">
+        <div class="csv-label">Aperçu — ligne Excel</div>
+        <div class="csv-preview" id="csv-preview"></div>
+      </div>
+
+
+
+      <!-- CHAT CLAUDE — fenêtre inline qui s'ouvre depuis l'action bar -->
+      <div id="chat-window" style="display:none;margin:0 12px 8px;border:1px solid #cce0f5;border-radius:10px;overflow:hidden;background:#fff">
+        <div style="background:#0078d4;padding:8px 12px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff">C</div>
+            <span style="font-size:12px;font-weight:600;color:#fff">Claude — Assistant SAV</span>
+          </div>
+          <button onclick="toggleChat()" style="background:none;border:none;color:rgba(255,255,255,0.8);font-size:18px;cursor:pointer;line-height:1;padding:0 4px">×</button>
+        </div>
+        <div class="chat-messages" id="chat-messages" style="max-height:200px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;background:#f5f8ff">
+          <div class="msg-ai">Je connais ce dossier. Pose-moi une question, demande-moi de modifier un champ ou de rédiger un message.</div>
+        </div>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid #e0ecf8;background:#fff">
+          <input type="text" id="chat-input" placeholder="Pose une question…" onkeydown="if(event.key==='Enter')sendChat()" style="flex:1;padding:7px 12px;border:1px solid #cce0f5;border-radius:20px;font-size:12px;font-family:inherit;outline:none;background:#f5f8ff"/>
+          <button onclick="sendChat()" style="width:32px;height:32px;border-radius:50%;background:#0078d4;color:#fff;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">→</button>
+        </div>
+      </div>
+      <div id="chat-bubble-btn" style="display:none"></div>
+
+    </div><!-- /state-result -->
+
+    <!-- ERROR -->
+    <div id="state-error">
+      <p id="error-msg"></p>
+      <br/>
+      <button class="btn btn-secondary" style="max-width:160px;margin:0 auto;display:block" onclick="resetToIdle()">Réessayer</button>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <!-- ACTION BAR -->
+  <div class="action-bar" id="action-bar" style="display:none">
+    <button class="btn btn-danger"   id="btn-relance-ticket" style="display:none" onclick="demanderTicket()">Copier demande ticket / facture</button>
+    <button class="btn btn-warn"     id="btn-relance-pj"     style="display:none" onclick="demanderPJ()">Copier demande pièces jointes</button>
+    <button class="btn btn-warn"     id="btn-relance-info"   style="display:none" onclick="sendRelance()">Copier demande informations</button>
+    <button class="btn btn-success"  id="btn-valider"        style="display:none" onclick="validerDossier()">Valider et copier dans Excel</button>
+    <button class="btn btn-secondary" id="btn-csv-fallback"  style="display:none" onclick="validerCSVSemicolon()">Copier format CSV (;) — si Ctrl+V ne fonctionne pas</button>
+    <div class="sep"></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary" id="btn-chat-open" style="display:none;flex:0 0 44px;padding:9px 0;border-radius:50%;font-size:16px" onclick="toggleChat()" title="Parler à Claude">💬</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="resetToIdle()">Nouveau mail</button>
+    </div>
+  </div>
+
+</div>
+
 <script>
 var G = {
   data:null, client:null, mode:null,
@@ -342,8 +668,19 @@ var G = {
 };
 
 // ── OFFICE INIT ──────────────────────────────────────────
+// Wrapper localStorage sécurisé — Outlook web peut le bloquer
+var LS = {
+  _data: {},
+  getItem: function(k){
+    try { return localStorage.getItem(k); } catch(e){ return this._data[k]||null; }
+  },
+  setItem: function(k,v){
+    try { localStorage.setItem(k,v); } catch(e){ this._data[k]=v; }
+  }
+};
+
 Office.onReady(function(){
-  if(localStorage.getItem('sav_api_key')) showMain();
+  if(LS.getItem('sav_api_key')) showMain();
 });
 
 // ── CONFIG ───────────────────────────────────────────────
