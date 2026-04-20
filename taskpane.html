@@ -175,10 +175,7 @@
 <!-- ===== CONFIG ===== -->
 <div id="screen-config">
   <h2>Configuration SAV</h2>
-  <p>Entre ta clé API Claude. Elle est stockée uniquement sur ce PC.</p>
-  <div class="cfg-label">Clé API Claude</div>
-  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..."/>
-  <p style="font-size:11px;color:#aaa;margin-top:-6px;margin-bottom:12px">Obtenir une clé sur console.anthropic.com</p>
+  <p>Configure les numéros d'accord du mois en cours.</p>
   <div class="cfg-label">Prochain n° accord du mois</div>
   <div class="cfg-row">
     <div>
@@ -360,16 +357,18 @@ var G = {
 
 // ── OFFICE INIT ──────────────────────────────────────────
 Office.onReady(function(){
-  if(localStorage.getItem('sav_api_key')) showMain();
+  // Plus besoin de clé API côté client — elle est sur le serveur
+  var configured = false;
+  try{ configured = !!localStorage.getItem('sav_configured'); }catch(e){}
+  if(configured) showMain();
 });
 
 // ── CONFIG ───────────────────────────────────────────────
 function saveConfig(){
-  var key = document.getElementById('api-key-input').value.trim();
-  if(!key.startsWith('sk-ant-')){ alert('Clé invalide — doit commencer par sk-ant-'); return; }
-  localStorage.setItem('sav_api_key', key);
-  localStorage.setItem('next_su',  document.getElementById('next-su').value  || '1');
-  localStorage.setItem('next_its', document.getElementById('next-its').value || '1');
+  // La clé API est maintenant sur le serveur — on sauvegarde juste les numéros d'accord
+  try{ localStorage.setItem('sav_configured', '1'); }catch(e){}
+  try{ localStorage.setItem('next_su',  document.getElementById('next-su').value  || '1'); }catch(e){}
+  try{ localStorage.setItem('next_its', document.getElementById('next-its').value || '1'); }catch(e){}
   showMain();
 }
 function showConfig(){
@@ -438,8 +437,16 @@ function analyzeEmail(){
     G.mailSubject = Office.context.mailbox.item.subject||'';
     G.mailSender  = Office.context.mailbox.item.from ? Office.context.mailbox.item.from.emailAddress:'';
     G.mailBody    = result.value||'';
-    // PJ non accessibles sur Exchange on-premise — upload manuel après analyse
-    runAnalysis();
+    // Tenter de lire les PJ depuis Outlook
+    var item = Office.context.mailbox.item;
+    if(item.attachments && item.attachments.length > 0){
+      setLoadingMsg('Lecture des pièces jointes…','');
+      loadOutlookAttachments(item.attachments, function(){
+        runAnalysis();
+      });
+    } else {
+      runAnalysis();
+    }
   });
 }
 
@@ -1276,17 +1283,15 @@ function formatChatReply(text){
 
 // ── API CLAUDE ───────────────────────────────────────────
 function callClaudeRaw(messages, maxTokens, cb){
-  var key = localStorage.getItem('sav_api_key');
-  if(!key){ showError("Clé API manquante."); return; }
   var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 30000);
-  fetch('https://api.anthropic.com/v1/messages',{
+  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 60000);
+  fetch('https://sav-server-production.up.railway.app/analyze',{
     method:'POST',
     signal:controller.signal,
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens||1000,messages:messages})
+    headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
+    body:JSON.stringify({messages:messages, max_tokens:maxTokens||2000})
   }).then(function(r){
-    if(!r.ok) return r.json().then(function(e){ throw new Error('HTTP '+r.status+' — '+(e.error?e.error.message:JSON.stringify(e))); });
+    if(!r.ok) return r.json().then(function(e){ throw new Error('HTTP '+r.status+' — '+JSON.stringify(e)); });
     return r.json();
   })
   .then(function(data){
@@ -1297,12 +1302,10 @@ function callClaudeRaw(messages, maxTokens, cb){
   .catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
 }
 function callClaudeChat(sys, history, cb){
-  var key = localStorage.getItem('sav_api_key');
-  if(!key) return;
-  fetch('https://api.anthropic.com/v1/messages',{
+  fetch('https://sav-server-production.up.railway.app/analyze',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages:history})
+    headers:{'Content-Type':'application/json','x-app-secret':'sav-flaudis-2024'},
+    body:JSON.stringify({messages:history, system:sys, max_tokens:800})
   }).then(function(r){return r.json();}).then(function(data){
     if(!data.content) return;
     cb(data.content.map(function(b){return b.text||'';}).join(''));
