@@ -788,14 +788,25 @@ function runAnalysis(){
         var noticeMsg = [{role:'user', content:[{type:'text', text:
           'Dossier SAV — Ref: ' + d.ref_produit + ' — Problème: ' + (d.designation_piece||d.resume||'') +
           '\nEn regardant la notice technique ci-jointe, identifie la pièce exacte à remplacer.' +
-          '\nRéponds UNIQUEMENT avec: "Pièce X × N — description courte" (ex: Pièce E × 2 — Coussin assise)' +
-          '\nSi la notice ne permet pas d\'identifier la pièce, réponds: NON_APPLICABLE'
+          '\nRÈGLES DE RÉPONSE STRICTES :' +
+          '\n- Format OBLIGATOIRE : "X × N" (ex: G × 4, E × 2, B × 1)' +
+          '\n- X = lettre de la pièce dans la notice' +
+          '\n- N = quantité TOTALE pour l\'ensemble du produit (ex: canapé + 2 fauteuils = total)' +
+          '\n- Si la quantité exacte dans le mail n\'est pas précisée, mets un ? : "G × ?" ' +
+          '\n- Rien d\'autre — pas d\'explication, pas de phrase, juste "X × N" ou "X × ?"' +
+          '\nSi la notice ne permet pas d\'identifier la pièce : NON_APPLICABLE'
         }]}];
         callClaudeRaw(noticeMsg, 150, function(noticeReply){
           var r = (noticeReply||'').trim();
-          if(r && r !== 'NON_APPLICABLE' && r.length > 5){
+          if(r && r !== 'NON_APPLICABLE' && r.length > 1){
             G.data.designation_piece = r;
             d.designation_piece = r;
+            // Si quantité inconnue (×?), signaler dans la suggestion
+            if(r.indexOf('?') >= 0){
+              var note = ' — Demander combien de pièces ' + r.split('×')[0].trim() + ' sont impactées';
+              d.raison_suggestion = (d.raison_suggestion||'') + note;
+              G.data.raison_suggestion = d.raison_suggestion;
+            }
           }
           renderResult(d);
         }, d.ref_produit);
