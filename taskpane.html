@@ -660,6 +660,11 @@ function runAnalysis(){
       try {
         if(d.analyse_pj && d.analyse_pj.length){
           pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return (p.type||'?')+': '+(p.description||'');}).join(' | ');
+          // Reconstruire analyse_photos depuis les PJ si vide
+          if(!d.analyse_photos){
+            var photoDescs = d.analyse_pj.filter(function(p){ return p.type==='PHOTO_DEFAUT'; }).map(function(p){ return p.description; });
+            if(photoDescs.length) d.analyse_photos = photoDescs.join(' / ');
+          }
         }
       } catch(e2){}
 
@@ -1033,18 +1038,16 @@ function validerDossier(){
   updateCSV();
   if(!G.csvLine) return;
   // Essayer TSV d'abord (colle directement dans Excel)
-  navigator.clipboard.writeText(G.csvLine).then(function(){
+  var btnV = document.getElementById('btn-valider');
+  function onCsvOk(){
     if(G.mode==='remb') incrementAccord(G.client);
-    var btn = document.getElementById('btn-valider');
-    btn.textContent='Copié — colle avec Ctrl+V dans Excel';
-    btn.className='btn btn-secondary';
-    btn.disabled=true;
-    // Afficher le bouton fallback CSV
+    if(btnV){ btnV.textContent='Copié — colle avec Ctrl+V dans Excel'; btnV.className='btn btn-secondary'; btnV.disabled=true; }
     var fb = document.getElementById('btn-csv-fallback');
     if(fb) fb.style.display='block';
-  }).catch(function(){
-    alert('Copie auto indisponible.');
-  });
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(G.csvLine).then(onCsvOk).catch(function(){ execCopy(G.csvLine, onCsvOk); });
+  } else { execCopy(G.csvLine, onCsvOk); }
 }
 
 function validerCSVSemicolon(){
