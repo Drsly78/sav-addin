@@ -671,6 +671,11 @@ function runAnalysis(){
       try {
         if(d.analyse_pj && d.analyse_pj.length){
           pjDesc = '\nPJ : ' + d.analyse_pj.map(function(p){return (p.type||'?')+': '+(p.description||'');}).join(' | ');
+          // Si analyse_photos est vide, le construire depuis analyse_pj
+          if(!d.analyse_photos){
+            var photoDescs = d.analyse_pj.filter(function(p){ return p.type==='PHOTO_DEFAUT'; }).map(function(p){ return p.description; });
+            if(photoDescs.length) d.analyse_photos = photoDescs.join(' / ');
+          }
         }
       } catch(e2){}
 
@@ -1091,111 +1096,43 @@ function sendRelance(){
   copyAndShow(corps, 'btn-relance-info');
 }
 function copyAndShow(texte, btnId){
-  navigator.clipboard.writeText(texte).then(function(){
-    var btn = document.getElementById(btnId);
-    var orig = btn.textContent;
-    btn.textContent = '✓ Copié — colle dans ta réponse mail';
-    btn.style.background='#e6f4ea';
-    btn.style.color='#1e7e34';
-    btn.style.borderColor='#a8d5b5';
-    setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 3000);
-  }).catch(function(){
-    prompt("Copie ce message :", texte);
-  });
+  var btn = document.getElementById(btnId);
+  var orig = btn ? btn.textContent : '';
+
+  function onSuccess(){
+    if(btn){
+      btn.textContent = '✓ Copié — colle dans ta réponse mail';
+      btn.style.background='#e6f4ea';
+      btn.style.color='#1e7e34';
+      btn.style.borderColor='#a8d5b5';
+      setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 3000);
+    }
+  }
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texte).then(onSuccess).catch(function(){
+      fallbackCopy(texte, onSuccess);
+    });
+  } else {
+    fallbackCopy(texte, onSuccess);
+  }
 }
 
-// ── CHAT ─────────────────────────────────────────────────
-function toggleChat(){
-  G.chatOpen=!G.chatOpen;
-  var win = document.getElementById('chat-window');
-  if(win) win.style.display = G.chatOpen ? 'block' : 'none';
-  var btn = document.getElementById('btn-chat-open');
-  if(btn) btn.style.background = G.chatOpen ? '#005a9e' : '';
-  if(G.chatOpen) setTimeout(function(){ var i=document.getElementById('chat-input'); if(i) i.focus(); }, 100);
-}
-function sendChat(){
-  var input = document.getElementById('chat-input');
-  var msg   = input.value.trim();
-  if(!msg) return;
-  input.value='';
-  var msgs = document.getElementById('chat-messages');
-  var uDiv = document.createElement('div');
-  uDiv.className='msg-user'; uDiv.textContent=msg;
-  msgs.appendChild(uDiv);
-  var loadDiv = document.createElement('div');
-  loadDiv.className='chat-loading'; loadDiv.textContent='Claude réfléchit…';
-  msgs.appendChild(loadDiv);
-  msgs.scrollTop=msgs.scrollHeight;
-  G.chatHistory.push({role:'user',content:msg});
-
-  var sys = "Tu es un assistant SAV expert. Contexte : client="+(G.client==='su'?'Système U':'Intersport')+
-    ", statut="+((G.data&&G.data.statut)||'?')+
-    ", traitement="+(G.mode==='sav'?'envoi pièce':G.mode==='remb'?'remboursement':'non choisi')+".\n\n"+
-    "Quand tu rédiges un email ou une réponse à envoyer au magasin :\n"+
-    "- Commence par 'Bonjour,' sur sa propre ligne\n"+
-    "- Corps structuré avec paragraphes clairs\n"+
-    "- Termine par 'Cordialement,\\nService SAV'\n"+
-    "- Utilise des tirets pour les listes\n\n"+
-    "Pour les réponses courtes et analyses : sois concis et direct.";
-
-  callClaudeChat(sys, G.chatHistory, function(reply){
-    loadDiv.className='msg-ai';
-    loadDiv.innerHTML = formatChatReply(reply);
-    G.chatHistory.push({role:'assistant',content:reply});
-    msgs.scrollTop=msgs.scrollHeight;
-  });
+function fallbackCopy(texte, onSuccess){
+  var ta = document.createElement('textarea');
+  ta.value = texte;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    onSuccess();
+  } catch(e) {
+    document.body.removeChild(ta);
+    prompt('Copie manuelle (Ctrl+C) :', texte);
+  }
 }
 
-function formatChatReply(text){
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^### (.+)$/gm,'<strong>$1</strong>')
-    .replace(/^— (.+)$/gm,'<li>$1</li>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, function(m){ return '<ul>'+m+'</ul>'; })
-    .replace(/\n\n/g,'</p><p style="margin-top:6px">')
-    .replace(/\n/g,'<br>');
-}
 
-// ── API CLAUDE ───────────────────────────────────────────
-function callClaudeRaw(messages, maxTokens, cb){
-  var key = localStorage.getItem('sav_api_key');
-  if(!key){ showError("Clé API manquante."); return; }
-  var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); showError("Délai dépassé — réessaye."); }, 30000);
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    signal:controller.signal,
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens||1000,messages:messages})
-  }).then(function(r){
-    if(!r.ok) return r.json().then(function(e){ throw new Error('HTTP '+r.status+' — '+(e.error?e.error.message:JSON.stringify(e))); });
-    return r.json();
-  })
-  .then(function(data){
-    clearTimeout(timeout);
-    if(data.error){showError("Erreur API ["+data.error.type+"] : "+data.error.message);return;}
-    cb(data.content.map(function(b){return b.text||'';}).join(''));
-  })
-  .catch(function(e){ clearTimeout(timeout); if(e.name!=='AbortError') showError("Erreur : "+e.message); });
-}
-function callClaudeChat(sys, history, cb){
-  var key = localStorage.getItem('sav_api_key');
-  if(!key) return;
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages:history})
-  }).then(function(r){return r.json();}).then(function(data){
-    if(!data.content) return;
-    cb(data.content.map(function(b){return b.text||'';}).join(''));
-  }).catch(function(){});
-}
-function showError(msg){
-  setState('error');
-  document.getElementById('error-msg').textContent=msg;
-}
-</script>
-</body>
-</html>
