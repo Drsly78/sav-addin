@@ -806,9 +806,10 @@ function runAnalysis(){
             // Extraire juste "X × N" même si Claude a ajouté du texte
             var matchPiece = r.match(/([A-Z])\s*[×x]\s*(\d+|\?)/);
             var cleanPiece = matchPiece ? matchPiece[0] : r.substring(0, 10);
-            var labelNotice = cleanPiece + ' (notice)';
-            G.data.designation_piece = labelNotice;
-            d.designation_piece = labelNotice;
+            // Stocker séparément pour le chat et pour l'affichage
+            G.data.designation_piece = cleanPiece;
+            G.data.designation_piece_source = 'notice';
+            d.designation_piece = cleanPiece;
             // Signaler quantité inconnue dans suggestion
             if(cleanPiece.indexOf('?') >= 0){
               var pieceId = cleanPiece.split(/[×x]/)[0].trim();
@@ -875,21 +876,43 @@ function runAnalysis(){
       if(d.analyse_photos) pjContext += '\n\nDEFAUTS VISIBLES : ' + d.analyse_photos;
       if(d.ticket_present) pjContext += '\n\nTICKET/FACTURE : present et identifie';
 
+            // Construire le contenu du premier message — texte + images si présentes
+      var chatInitText =
+          "Voici le dossier SAV que tu viens d'analyser.\n\n" +
+          '=== MAIL ORIGINAL ===\n' +
+          'De : ' + (G.mailSender||'?') + '\n' +
+          'Objet : ' + (G.mailSubject||'?') + '\n' +
+          'Date : ' + (G.mailDate||'?') + '\n\n' +
+          G.mailBody + '\n' +
+          '=== FIN MAIL ===\n\n' +
+          '=== DONNÉES EXTRAITES ===\n' +
+          'Client : '+(d.client==='su'?'Système U':'Intersport')+'\n' +
+          'Enseigne : '+(d.nom_enseigne||'?')+'\n' +
+          'Département : '+(d.departement_ville||'?')+'\n' +
+          'Référence : '+(d.ref_produit||'?')+'\n' +
+          'Pièce à remplacer : '+(d.designation_piece||'?')+
+            (G.data&&G.data.designation_piece_source==='notice' ? ' (identifiée depuis la notice technique)' : '')+'\n' +
+          'N° dossier : '+(d.numero_dossier||'?')+'\n' +
+          'Suggestion : '+(d.suggestion_traitement||'?')+' — '+(d.raison_suggestion||'')+'\n' +
+          pjContext;
+
+      var chatPhotos = G.attachments && G.attachments.photos && G.attachments.photos.length > 0
+        ? G.attachments.photos : [];
+
+      var chatInitContent;
+      if(chatPhotos.length > 0){
+        // Contenu mixte : texte + images
+        chatInitContent = [{type:'text', text: chatInitText + '\n\nIMAGES JOINTES (' + chatPhotos.length + ') — tu peux les analyser et répondre à des questions dessus :'}];
+        chatPhotos.forEach(function(img, i){
+          chatInitContent.push({type:'text', text:'[Image '+(i+1)+' — '+img.name+']'});
+          chatInitContent.push({type:'image', source:{type:'base64', media_type:img.mediaType||'image/jpeg', data:img.data}});
+        });
+      } else {
+        chatInitContent = chatInitText;
+      }
+
       G.chatHistory = [
-        {role:'user', content:
-          "Voici le dossier SAV complet que tu viens d'analyser :\n\n" +
-          'CLIENT : '+(d.client==='su'?'Systeme U':'Intersport')+'\n' +
-          'ENSEIGNE : '+(d.nom_enseigne||'?')+'\n' +
-          'DEPARTEMENT : '+(d.departement_ville||'?')+'\n' +
-          'REFERENCE : '+(d.ref_produit||'?')+'\n' +
-          'PIECE DEMANDEE : '+(d.designation_piece||'?')+'\n' +
-          'N° DOSSIER : '+(d.numero_dossier||'?')+'\n' +
-          'DATE : '+(d.date_reception||'?')+'\n' +
-          'STATUT : '+(d.statut||'?')+'\n' +
-          'SUGGESTION : '+(d.suggestion_traitement||'?')+' — '+(d.raison_suggestion||'')+'\n' +
-          pjContext +
-          '\n\nMAIL ORIGINAL :\n' + G.mailBody
-        },
+        {role:'user', content: chatInitContent},
         {role:"assistant", content:
           "J'ai analyse ce dossier. " + d.resume +
           (pjContext ? " J'ai egalement analyse les pieces jointes." : "") +
@@ -940,7 +963,7 @@ function renderResult(d){
     {label:'Département / ville', val:d.departement_ville, full:false},
     {label:'Réf. produit',      val:d.ref_produit,        full:false},
     {label:'EAN',               val:d.ean,                full:false},
-    {label:'Pièce / problème',  val:d.designation_piece,  full:true},
+    {label:'Pièce / problème',  val:d.designation_piece + (d.designation_piece_source==='notice' ? ' (notice)' : ''),  full:true},
     {label:'N° de dossier',     val:d.numero_dossier,     full:false},
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
@@ -1387,7 +1410,8 @@ function sendChat(){
 
   var sys =
     "Tu es un assistant SAV interne pour une entreprise qui distribue des produits bazar (Systeme U) et accessoires sport (Intersport).\n" +
-    "Tu aides l'operatrice SAV a analyser les dossiers, repondre a ses questions, et rediger des reponses aux magasins.\n\n" +
+    "Tu aides l'operatrice SAV a analyser les dossiers, repondre a ses questions, et rediger des reponses aux magasins.\n" +
+    "IMPORTANT : quand tu rediges un message pour demander des infos, base-toi UNIQUEMENT sur le probleme decrit dans le mail. Ne mentionne jamais la notice technique dans tes reponses aux magasins.\n\n" +
     "DEUX MODES :\n" +
     "1. CONVERSATION : si la question est une analyse, un avis, une verification — reponds directement et simplement.\n" +
     "   Ex: 'est-ce que le defaut est visible ?' / 'ca ressemble a quoi ?' / 'c'est pris en garantie ?'\n" +
@@ -1419,6 +1443,32 @@ function sendChat(){
     "- Relance pour pieces jointes manquantes\n\n" +
 
     "Pour les questions internes ou analyses : reponds de facon directe et concise.";
+
+  // Détecter si la question nécessite de consulter la notice
+  var needsNotice = G.data && G.data.ref_produit && G.data.designation_piece_source === 'notice' &&
+    /notice|pièce|piece|schéma|schema|montage|assemblage|vis|quantité|quantite|composant|référence|reference|technique/i.test(msg);
+
+  if(needsNotice){
+    // Appel avec notice
+    var noticeMessages = G.chatHistory.concat([]);
+    callClaudeRaw(noticeMessages, 800, function(reply){
+      reply = reply || '';
+      loadDiv.className='msg-ai';
+      loadDiv.innerHTML = formatChatReply(reply);
+      var wrap = loadDiv.querySelector('.chat-copy-btn-wrap');
+      if(wrap){
+        var copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copier';
+        copyBtn.style.cssText = 'margin-top:5px;padding:3px 10px;background:none;border:1px solid #d0d0d0;border-radius:4px;font-size:11px;color:#666;cursor:pointer';
+        (function(r){ copyBtn.onclick = function(){ chatCopy(copyBtn, r); }; })(reply);
+        wrap.appendChild(copyBtn);
+      }
+      if(!G.chatOpen){ var btn=document.getElementById('btn-chat-open'); if(btn) btn.style.background='#e74c3c'; }
+      G.chatHistory.push({role:'assistant', content:reply});
+      msgs.scrollTop = msgs.scrollHeight;
+    }, G.data.ref_produit);
+    return;
+  }
 
   callClaudeChat(sys, G.chatHistory, function(reply){
     loadDiv.className='msg-ai';
