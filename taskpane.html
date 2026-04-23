@@ -788,13 +788,17 @@ function runAnalysis(){
         var noticeMsg = [{role:'user', content:[{type:'text', text:
           'Ref produit: ' + d.ref_produit + '\nProblème décrit dans le mail: ' + (d.designation_piece||d.resume||'') +
           '\n\nREGARDE LA NOTICE CI-JOINTE.' +
-          '\nIdentifie la lettre de la pièce concernée par le problème.' +
-          '\nPour la quantité N : cherche dans le texte du mail si le client précise COMBIEN de pièces sont impactées.' +
-          '\n- Si le mail dit un chiffre précis (ex: "2 coussins") → N = ce chiffre' +
-          '\n- Si le mail dit "tous" ou "l\'ensemble" → N = quantité totale de la notice' +
-          '\n- Si le mail ne précise PAS combien sont impactés → N = ?' +
-          '\nFormat OBLIGATOIRE : "X × N" — RIEN D\'AUTRE. Pas de phrase, pas d\'explication.' +
-          '\nExemples : "G × 2" / "G × 4" / "G × ?" — Si impossible : NON_APPLICABLE'
+          '\nIdentifie la lettre de la pièce concernée par le problème décrit.' +
+          '\n\nSi le client mentionne une lettre de pièce spécifique dans son mail :' +
+          '\n- Compare avec ce que tu vois dans la notice' +
+          '\n- Si la pièce mentionnée par le client est INCORRECTE, utilise le format : "X × N ⚠️ client indique Y"' +
+          '\n- Exemple : "G × ? ⚠️ client indique E" si le client dit pièce E mais c\'est en fait G' +
+          '\n\nPour la quantité N :' +
+          '\n- Chiffre précis dans le mail → ce chiffre' +
+          '\n- "tous" ou "l\'ensemble" dans le mail → quantité totale de la notice' +
+          '\n- Pas de précision → ?' +
+          '\nFormat : "X × N" ou "X × N ⚠️ client indique Y" — RIEN D\'AUTRE.' +
+          '\nSi impossible à identifier : NON_APPLICABLE'
         }]}];
         callClaudeRaw(noticeMsg, 150, function(noticeReply){
           var r = (noticeReply||'').trim();
@@ -809,6 +813,11 @@ function runAnalysis(){
             if(cleanPiece.indexOf('?') >= 0){
               var pieceId = cleanPiece.split(/[×x]/)[0].trim();
               d.raison_suggestion = (d.raison_suggestion||'') + ' — Demander combien de pièces ' + pieceId + ' sont impactées';
+              G.data.raison_suggestion = d.raison_suggestion;
+            }
+            // Signaler contradiction pièce client vs notice
+            if(r.indexOf('client indique') >= 0){
+              d.raison_suggestion = (d.raison_suggestion||'') + ' — ⚠️ Vérifier : le client indique une pièce différente de celle identifiée dans la notice';
               G.data.raison_suggestion = d.raison_suggestion;
             }
           }
@@ -1208,12 +1217,18 @@ function updateCSV(){
   } else if(G.mode==='remb'&&G.client==='its'){
     // Ordre exact tableau REMBOURSEMENT ITS : Mois | Date réception | Prix | Code article | EAN | REF. | Département et ville | Code sociétaire | N° accord | N° Wisen
     labels=['Mois','Date récep.','Prix (à remplir)','Code article (à remplir)','EAN','Référence','Département et ville','Code sociétaire (à remplir)','N° accord','N° Wisen (à remplir)'];
-    cols=[getv('f_mois'), d.date_reception||'', '', '', getv('f_ean'), getv('f_ref'), getv('f_depville'), '', G.accordNum||'', ''];
+    cols=[getv('f_mois'), d.date_reception||'', null, null, getv('f_ean'), getv('f_ref'), getv('f_depville'), null, G.accordNum||'', null];
   }
   // Générer TSV (tabulations) — dans Excel : Ctrl+V fonctionne directement
-  G.csvLine = cols.map(function(v){return String(v).replace(/\t/g,' ').replace(/\n/g,' ');}).join('\t');
-  // Aussi générer CSV point-virgule pour fallback
-  G.csvLineSemicolon = cols.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');
+  // null = cellule à ne pas toucher (contient des formules Excel)
+  G.csvLine = cols.map(function(v){
+    if(v === null) return '';  // cellule vide — ne touche pas les formules
+    return String(v).replace(/\t/g,' ').replace(/\n/g,' ');
+  }).join('\t');
+  G.csvLineSemicolon = cols.map(function(v){
+    if(v === null) return '';
+    return '"'+String(v).replace(/"/g,'""')+'"';
+  }).join(';');
   var preview = document.getElementById('csv-preview');
   preview.innerHTML = cols.map(function(v,i){
     return '<div class="csv-row"><span class="csv-col-name">'+(labels[i]||'')+'</span><span class="csv-col-val'+(v?'':' empty')+'">'+(v||'vide')+'</span></div>';
