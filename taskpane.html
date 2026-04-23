@@ -61,7 +61,6 @@
     .client-row{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
     .client-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700}
     .badge-u{background:#e8f0fe;color:#1a56db}
-    .badge-its{background:#fce8d5;color:#c2410c}
     .badge-unknown{background:#f3f4f6;color:#555}
     .statut-pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px}
     .pill-ok{background:#e6f4ea;color:#1e7e34}
@@ -184,7 +183,7 @@
     </div>
     <div>
       <div class="cfg-label" style="margin-top:4px">Intersport</div>
-      <input type="number" id="next-its" placeholder="1" min="1" value="1"/>
+      <input type="number" id="next-its" style="display:none" value="1"/>
     </div>
   </div>
   <p style="font-size:11px;color:#aaa;margin-top:-4px;margin-bottom:14px">Remettre à 1 chaque début de mois</p>
@@ -672,10 +671,8 @@ function runAnalysis(){
     "",
     "Une fois que tu as compris le mail, extrais ces informations :",
     "",
-    "CLIENT — Systeme U ou Intersport ?",
-    "Indices pour Systeme U : Super U, Hyper U, U Express, Cooperative U,",
-    "COOP U, magasin U, portail USV, rma@monsav.com",
-    "Indices pour Intersport : Intersport, ITS, intersport.fr",
+    "CLIENT — uniquement Systeme U (su)",
+    "Indices : Super U, Hyper U, U Express, Cooperative U, COOP U, magasin U, portail USV, rma@monsav.com",
     "",
     "ENSEIGNE — nom du magasin",
     "Pour Systeme U : retourne uniquement SUPER U, HYPER U ou U EXPRESS",
@@ -748,7 +745,7 @@ function runAnalysis(){
 
   lines.push("Reponds UNIQUEMENT avec ce JSON valide, sans texte autour :");
   lines.push("{");
-  lines.push("  \"client\": \"su\" ou \"its\",");
+  lines.push("  \"client\": \"su\",");
   lines.push("  \"nom_enseigne\": \"SUPER U\" ou \"HYPER U\" ou \"U EXPRESS\" pour SU, nom magasin pour ITS,");
   lines.push("  \"departement_ville\": \"67 TRUCHTERSHEIM\",");
   lines.push("  \"ref_produit\": reference technique exacte,");
@@ -836,11 +833,11 @@ function runAnalysis(){
       }
 
       // Normaliser nom_enseigne — l'IA peut retourner des variantes
-      if(d.client === 'su' && d.nom_enseigne){
+      if(d.nom_enseigne){
         var e = d.nom_enseigne.toUpperCase();
         if(e.indexOf('HYPER') >= 0)       d.nom_enseigne = 'HYPER U';
         else if(e.indexOf('EXPRESS') >= 0) d.nom_enseigne = 'U EXPRESS';
-        else if(e.indexOf('SUPER') >= 0 || e.indexOf(' U') >= 0 || e.indexOf('COOP') >= 0) d.nom_enseigne = 'SUPER U';
+        else d.nom_enseigne = 'SUPER U';
       }
 
       if(hasImages && typeof d.ticket_present !== 'undefined'){
@@ -1095,10 +1092,8 @@ function selectMode(mode){
   document.getElementById('accord-block').style.display='none';
   document.getElementById('form-section').style.display='flex';
   var d = G.data;
-  if     (mode==='sav'  && d.client==='su')  renderFormSAV_SU(d);
-  else if(mode==='sav'  && d.client==='its') renderFormSAV_ITS(d);
-  else if(mode==='remb' && d.client==='su')  renderFormRemb_SU(d);
-  else if(mode==='remb' && d.client==='its') renderFormRemb_ITS(d);
+  if(mode==='remb') renderFormRemb_SU(d);
+  else              renderFormSAV_SU(d);
   updateCSV();
   renderActionBar();
 }
@@ -1211,12 +1206,12 @@ function genAccord(client){
   var now = new Date();
   var yy  = String(now.getFullYear()).slice(2);
   var mm  = String(now.getMonth()+1).padStart(2,'0');
-  var key = client==='su'?'next_su':'next_its';
+  var key = 'next_su';
   var num = parseInt(localStorage.getItem(key)||'1');
-  return (client==='su'?'SU':'ITS')+yy+mm+String(num).padStart(3,'0');
+  return 'SU'+yy+mm+String(num).padStart(3,'0');
 }
 function incrementAccord(client){
-  var key = client==='su'?'next_su':'next_its';
+  var key = 'next_su';
   localStorage.setItem(key, String(parseInt(localStorage.getItem(key)||'1')+1));
 }
 
@@ -1237,18 +1232,10 @@ function updateCSV(){
     // Ordre exact tableau SYSTEME U : Date réception | Date expédition | Référence produit | Désignation pièces | Nom enseigne | Département et ville | Tracking | Numéro CNB | Livraison
     labels=['Date récep.','Date expé. (à remplir)','Référence produit','Désignation pièces','Enseigne','Département et ville','Tracking (à remplir)','N° dossier','Livraison (à remplir)'];
     cols=[d.date_reception||'', '', getv('f_ref'), getv('f_designation'), getv('f_enseigne'), getv('f_depville'), '', getv('f_cnb'), ''];
-  } else if(G.mode==='sav'&&G.client==='its'){
-    // Ordre exact tableau INTERSPORT : Date | Référence | Numéro de lot | Pannes | Magasin | Commentaires | Date réception produit | Date expédition | État produit | Tracking | Livraison
-    labels=['Date','Référence','N° lot (à remplir)','Pannes','Magasin','Commentaires (à remplir)','Date récep. produit (à remplir)','Date expé. (à remplir)','État produit (à remplir)','Tracking (à remplir)','Livraison (à remplir)'];
-    cols=[d.date_reception||'', getv('f_ref'), '', getv('f_pannes'), getv('f_enseigne'), '', '', '', '', '', ''];
-  } else if(G.mode==='remb'&&G.client==='su'){
+  } else if(G.mode==='remb'){
     // Ordre exact tableau REMBOURSEMENT SU : Date réception | Réception facture | REF. | EAN | Qté | Nom enseigne | Département et ville | Commentaire | Numéro CNB | N° accord | N° Wisen | DDP/FOB
     labels=['Date récep.','Récep. facture (à remplir)','Référence','EAN','Qté','Enseigne','Département et ville','Commentaire (à remplir)','N° dossier','N° accord','N° Wisen (à remplir)','DDP/FOB (à remplir)'];
     cols=[d.date_reception||'', '', getv('f_ref'), getv('f_ean'), getv('f_qte'), getv('f_enseigne'), getv('f_depville'), '', getv('f_cnb'), G.accordNum||'', '', ''];
-  } else if(G.mode==='remb'&&G.client==='its'){
-    // Ordre exact tableau REMBOURSEMENT ITS : Mois | Date réception | Prix | Code article | EAN | REF. | Département et ville | Code sociétaire | N° accord | N° Wisen
-    labels=['Mois','Date récep.','Prix (à remplir)','Code article (à remplir)','EAN','Référence','Département et ville','Code sociétaire (à remplir)','N° accord','N° Wisen (à remplir)'];
-    cols=[getv('f_mois'), d.date_reception||'', null, null, getv('f_ean'), getv('f_ref'), getv('f_depville'), null, G.accordNum||'', null];
   }
   // Générer TSV (tabulations) — dans Excel : Ctrl+V fonctionne directement
   // null = cellule à ne pas toucher (contient des formules Excel)
@@ -1417,7 +1404,7 @@ function sendChat(){
   }
 
   var sys =
-    "Tu es un assistant SAV interne pour une entreprise qui distribue des produits bazar (Systeme U) et accessoires sport (Intersport).\n" +
+    "Tu es un assistant SAV interne pour Flaudis, entreprise qui distribue des produits bazar a Systeme U (Super U, Hyper U, U Express).\n" +
     "Tu aides l'operatrice SAV a analyser les dossiers, repondre a ses questions, et rediger des reponses aux magasins.\n" +
     "IMPORTANT : quand tu rediges un message pour demander des infos, base-toi UNIQUEMENT sur le probleme decrit dans le mail. Ne mentionne jamais la notice technique dans tes reponses aux magasins.\n\n" +
     "DEUX MODES :\n" +
