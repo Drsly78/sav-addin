@@ -784,8 +784,14 @@ function runAnalysis(){
       G.data   = d;
       G.client = d.client;
 
-      // Si ref produit trouvée, re-analyser avec la notice pour affiner la désignation
-      if(d.ref_produit && d.ref_produit.length > 3 && d.ref_produit !== 'null'){
+      // Si ref produit trouvée et ressemble à une vraie ref technique, chercher la notice
+      // Une ref technique contient des chiffres ET des lettres avec tirets (ex: ABD-SFKD268WD)
+      var isRefTechnique = d.ref_produit && d.ref_produit.length > 3 &&
+        d.ref_produit !== 'null' &&
+        /[A-Z].*\d|\d.*[A-Z]/.test(d.ref_produit) &&  // contient lettres ET chiffres
+        /[-_]/.test(d.ref_produit);                     // contient tiret ou underscore
+
+      if(isRefTechnique){
         setLoadingMsg('Consultation notice produit…','');
         var noticeMsg = [{role:'user', content:[{type:'text', text:
           'Ref produit: ' + d.ref_produit + '\nProblème décrit dans le mail: ' + (d.designation_piece||d.resume||'') +
@@ -970,7 +976,7 @@ function renderResult(d){
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
     {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true},
-    {label:'Analyse photos',    val:d.analyse_photos||(G.attachments&&G.attachments.photos&&G.attachments.photos.length?'Images reçues — aucun défaut décrit':null), full:true}
+    {label:'Analyse photos',    val:(G.attachments&&G.attachments.photos&&G.attachments.photos.length>0)?(d.analyse_photos||'Photos reçues — à vérifier'):d.analyse_photos||null, full:true}
   ];
   document.getElementById('recap-grid').innerHTML = items.map(function(item){
     var cls = item.full ? 'recap-item-full':'recap-item';
