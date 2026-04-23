@@ -736,7 +736,7 @@ function runAnalysis(){
     lines.push("Decris l'etat de surface, forme, texture de chaque photo produit.");
     lines.push("Cherche : affaissement, plis permanents, compression, deformation.");
     lines.push("Si incertain : indique 'a verifier physiquement'.");
-    lines.push("analyse_photos ne doit JAMAIS etre null si des images sont presentes.");
+  
     lines.push("");
     lines.push("analyse_photos : decris TOUJOURS ce que tu vois sur les photos du produit, meme brievement.");
   lines.push("  Meme si le defaut n'est pas clairement visible, decris l'etat general du produit.");
@@ -765,8 +765,8 @@ function runAnalysis(){
   lines.push("  \"raison_suggestion\": justification,");
   lines.push("  \"ticket_present\": true ou false,");
   lines.push("  \"analyse_pj\": [{type, description}],");
-  lines.push("  \"analyse_photos\": synthese des observations sur les photos ou null,");
-  lines.push("  \"defaut_visible\": true ou false");
+
+
   lines.push("}");
 
   var promptText = lines.join("\n");
@@ -976,7 +976,7 @@ function renderResult(d){
     {label:'Quantité',          val:d.quantite,           full:false},
     {label:'Date réception',    val:d.date_reception,     full:false},
     {label:'Suggestion IA',     val:(d.suggestion_traitement==='sav'?'Envoi pièce':d.suggestion_traitement==='remboursement'?'Remboursement':'À déterminer')+' — '+d.raison_suggestion, full:true, suggest:true},
-    {label:'Analyse photos',    val:(G.attachments&&G.attachments.photos&&G.attachments.photos.length>0)?(d.analyse_photos||'Photos reçues — à vérifier'):d.analyse_photos||null, full:true}
+
   ];
   document.getElementById('recap-grid').innerHTML = items.map(function(item){
     var cls = item.full ? 'recap-item-full':'recap-item';
