@@ -1052,7 +1052,7 @@ function renderActionBar(){
   document.getElementById('btn-relance-ticket').style.display = 'none';
   document.getElementById('btn-relance-pj').style.display     = 'none'; var _unused = ticketOk && (!noticeOk||!photoOk) && !(G.pjIgnored.notice&&G.pjIgnored.photo) ? 'block':'none';
   document.getElementById('btn-relance-info').style.display   = ticketOk && !infoOk          ? 'block':'none';
-  document.getElementById('btn-valider').style.display        = ticketOk && modeOk           ? 'block':'none';
+  document.getElementById('btn-valider').style.display        = modeOk ? 'block':'none';
 }
 
 // ── SÉLECTION MODE ───────────────────────────────────────
